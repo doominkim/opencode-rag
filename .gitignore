@@ -21,6 +21,9 @@ logs/
 rag/logs/
 *.log
 
+# Local backup/temp files
+*.bak.*
+
 # Python cache/build artifacts
 __pycache__/
 *.py[cod]

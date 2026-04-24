@@ -1,5 +1,54 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-  }
+  "plugin": [
+    "@rama_nigg/open-cursor@latest",
+    "cursor-acp"
+  ],
+  "provider": {
+    "cursor-acp": {
+      "name": "Cursor",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:32124/v1"
+      },
+      "models": {
+        "auto": { "name": "Auto" },
+
+        "composer-2": { "name": "Composer 2" },
+        "composer-2-fast": { "name": "Composer 2 (Fast)" },
+        "composer-1.5": { "name": "Composer 1.5" },
+
+        "claude-4.6-opus-high": { "name": "Claude 4.6 Opus (High)" },
+        "claude-4.6-opus-max": { "name": "Claude 4.6 Opus (Max)" },
+        "claude-4.6-opus-high-thinking": { "name": "Claude 4.6 Opus (High, Thinking)" },
+        "claude-4.6-opus-high-thinking-fast": { "name": "Claude 4.6 Opus (High, Thinking, Fast)" },
+        "claude-4.6-opus-max-thinking": { "name": "Claude 4.6 Opus (Max, Thinking)" },
+        "claude-4.6-opus-max-thinking-fast": { "name": "Claude 4.6 Opus (Max, Thinking, Fast)" },
+        "claude-4.6-sonnet-medium": { "name": "Claude 4.6 Sonnet (Medium)" },
+        "claude-4.6-sonnet-medium-thinking": { "name": "Claude 4.6 Sonnet (Medium, Thinking)" },
+
+        "claude-opus-4-7-low": { "name": "Claude Opus 4.7 (Low)" },
+        "claude-opus-4-7-medium": { "name": "Claude Opus 4.7 (Medium)" },
+        "claude-opus-4-7-high": { "name": "Claude Opus 4.7 (High)" },
+        "claude-opus-4-7-xhigh": { "name": "Claude Opus 4.7 (XHigh)" },
+        "claude-opus-4-7-max": { "name": "Claude Opus 4.7 (Max)" },
+        "claude-opus-4-7-thinking-low": { "name": "Claude Opus 4.7 (Low, Thinking)" },
+        "claude-opus-4-7-thinking-medium": { "name": "Claude Opus 4.7 (Medium, Thinking)" },
+        "claude-opus-4-7-thinking-high": { "name": "Claude Opus 4.7 (High, Thinking)" },
+        "claude-opus-4-7-thinking-xhigh": { "name": "Claude Opus 4.7 (XHigh, Thinking)" },
+        "claude-opus-4-7-thinking-max": { "name": "Claude Opus 4.7 (Max, Thinking)" },
+
+        "claude-4.5-opus-high": { "name": "Claude 4.5 Opus (High)" },
+        "claude-4.5-opus-high-thinking": { "name": "Claude 4.5 Opus (High, Thinking)" },
+        "claude-4.5-sonnet": { "name": "Claude 4.5 Sonnet" },
+        "claude-4.5-sonnet-thinking": { "name": "Claude 4.5 Sonnet (Thinking)" },
+
+        "grok-4-20": { "name": "Grok 4.20" },
+        "grok-4-20-thinking": { "name": "Grok 4.20 (Thinking)" },
+
+        "kimi-k2.5": { "name": "Kimi K2.5" }
+      }
+    }
+  },
+  "mcp": {}
 }
