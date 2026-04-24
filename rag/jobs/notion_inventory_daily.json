@@ -1,0 +1,14 @@
+{
+  "job_key": "notion_inventory_daily",
+  "description": "재고 도메인 Notion page tree를 global-domain-knowledge namespace로 동기화",
+  "schedule_hint": "daily",
+  "pipeline": "notion_page_tree_sync",
+  "source": "notion_company_tree",
+  "namespace": "global-domain-knowledge",
+  "input": "/Users/dominic/.config/opencode/rag/data/raw/notion/notion_company_tree/latest.json",
+  "metadata": {
+    "domain": "inventory",
+    "scenario_key": "inventory_policy",
+    "knowledge_class": "source"
+  }
+}

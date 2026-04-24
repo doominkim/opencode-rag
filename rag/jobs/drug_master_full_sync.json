@@ -1,0 +1,15 @@
+{
+  "job_key": "drug_master_full_sync",
+  "description": "약품 마스터 원본을 정규화해 global-domain-knowledge namespace로 동기화",
+  "schedule_hint": "daily",
+  "disabled": true,
+  "disabled_reason": "drug_master_sync 파이프라인이 아직 구현되지 않음",
+  "pipeline": "drug_master_sync",
+  "source": "drug_master",
+  "namespace": "global-domain-knowledge",
+  "metadata": {
+    "domain": "drug",
+    "scenario_key": "drug_master",
+    "knowledge_class": "source"
+  }
+}

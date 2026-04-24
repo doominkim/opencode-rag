@@ -1,0 +1,88 @@
+{
+  "sources": [
+    {
+      "source_key": "notion",
+      "match_keys": [
+        "notion",
+        "notion_company_tree"
+      ],
+      "source_type": "api/content-tree",
+      "record_unit": "page",
+      "document_unit": "page",
+      "default_domain": "general",
+      "authority_level": 50,
+      "path_mode": "page_tree",
+      "metadata_defaults": {
+        "record_type": "page",
+        "chunk_strategy": "section"
+      },
+      "primary_for": [
+        "policy",
+        "process",
+        "faq",
+        "glossary",
+        "decision"
+      ]
+    },
+    {
+      "source_key": "drug_master",
+      "match_keys": [
+        "drug_master"
+      ],
+      "source_type": "db/structured",
+      "record_unit": "drug_row",
+      "document_unit": "drug",
+      "default_domain": "drug",
+      "authority_level": 90,
+      "metadata_defaults": {
+        "record_type": "drug",
+        "chunk_strategy": "record"
+      },
+      "primary_for": [
+        "drug_code",
+        "product_name",
+        "ingredient_name",
+        "manufacturer",
+        "classification",
+        "standard"
+      ]
+    },
+    {
+      "source_key": "memory_bank",
+      "match_keys": [
+        "memory_bank"
+      ],
+      "source_type": "curated/memory",
+      "record_unit": "memory_note",
+      "document_unit": "memory_note",
+      "default_domain": "cross_project",
+      "authority_level": 80,
+      "metadata_defaults": {
+        "record_type": "memory",
+        "chunk_strategy": "full_document"
+      },
+      "primary_for": [
+        "coding_preference",
+        "anti_pattern",
+        "decision_memory",
+        "project_nuance",
+        "working_context"
+      ]
+    }
+  ],
+  "resolution_policy": {
+    "default": "prefer_higher_authority",
+    "field_overrides": {
+      "drug_code": "drug_master",
+      "product_name": "drug_master",
+      "ingredient_name": "drug_master",
+      "manufacturer": "drug_master",
+      "policy": "notion",
+      "process": "notion",
+      "faq": "notion",
+      "coding_preference": "memory_bank",
+      "anti_pattern": "memory_bank",
+      "project_nuance": "memory_bank"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "source_key": "memory_bank",
+  "source_type": "memory_bank",
+  "mode": "curated_memory",
+  "workspace": "global",
+  "metadata_defaults": {
+    "visibility": "internal",
+    "locale": "ko",
+    "record_type": "memory",
+    "knowledge_class": "derived"
+  }
+}

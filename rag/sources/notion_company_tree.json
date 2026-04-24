@@ -1,0 +1,18 @@
+{
+  "source_key": "notion_company_tree",
+  "source_type": "notion",
+  "mode": "page_tree",
+  "workspace": "company",
+  "roots": [
+    {
+      "root_page_id": "replace-me",
+      "domain": "inventory",
+      "document_type": "policy",
+      "status": "approved"
+    }
+  ],
+  "metadata_defaults": {
+    "visibility": "internal",
+    "locale": "ko"
+  }
+}

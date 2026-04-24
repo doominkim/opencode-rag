@@ -1,0 +1,14 @@
+{
+  "job_key": "memory_bank_manual",
+  "description": "대화에서 확인된 장기 메모리/선호를 global-domain-knowledge namespace로 동기화",
+  "schedule_hint": "manual",
+  "pipeline": "memory_sync",
+  "source": "memory_bank",
+  "namespace": "global-domain-knowledge",
+  "input": "/Users/dominic/.config/opencode/rag/data/raw/memory/global_preferences.json",
+  "metadata": {
+    "domain": "cross_project",
+    "scenario_key": "coding-preferences",
+    "knowledge_class": "derived"
+  }
+}

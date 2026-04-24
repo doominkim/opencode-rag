@@ -1,0 +1,13 @@
+{
+  "job_key": "workspace_repo_docs_sync",
+  "description": "Workspace 하위 모든 git repo/worktree의 고가치 문서를 workspace namespace로 동기화",
+  "schedule_hint": "manual",
+  "pipeline": "workspace_repo_docs_sync",
+  "namespace": "workspace",
+  "workspace_root": "/Users/dominic/Workspace",
+  "metadata": {
+    "domain": "workspace",
+    "scenario_key": "workspace_repo_docs",
+    "knowledge_class": "source"
+  }
+}

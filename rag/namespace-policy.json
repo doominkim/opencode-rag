@@ -1,0 +1,32 @@
+{
+  "base_namespace": "rag-base",
+  "default_search_namespaces": [
+    "workspace",
+    "global-domain-knowledge",
+    "rag-base"
+  ],
+  "namespace_bias": {
+    "global-domain-knowledge": 0.01,
+    "rag-base": 0.005
+  },
+  "agent_namespaces": [
+    {
+      "agent_key": "policy-reviewer",
+      "namespace_key": "policy-reviewer",
+      "inherits": ["rag-base"],
+      "primary_for": ["policy", "adr", "convention"]
+    },
+    {
+      "agent_key": "impact-analyzer",
+      "namespace_key": "impact-analyzer",
+      "inherits": ["rag-base"],
+      "primary_for": ["code_index", "dependency_map", "entity", "migration"]
+    },
+    {
+      "agent_key": "ops-triage",
+      "namespace_key": "ops-triage",
+      "inherits": ["rag-base"],
+      "primary_for": ["incident_review", "runbook", "log_pattern"]
+    }
+  ]
+}

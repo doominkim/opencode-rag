@@ -1,0 +1,27 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "github_personal": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_MCP_PAT_PERSONAL}"
+      }
+    },
+    "notion_personal": {
+      "type": "remote",
+      "url": "https://mcp.notion.com/mcp",
+      "enabled": true,
+      "oauth": {
+        "redirectUri": "http://localhost:19876/mcp/oauth/callback"
+      }
+    },
+    "figma_personal": {
+      "type": "remote",
+      "url": "https://mcp.figma.com/mcp",
+      "enabled": true
+    }
+  }
+}

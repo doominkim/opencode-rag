@@ -1,0 +1,42 @@
+node_modules
+package.json
+package-lock.json
+bun.lock
+
+# Local secrets
+.env
+.env.*
+!.env.example
+rag/.env
+rag/.env.*
+!rag/.env.example
+*/*.env
+
+# RAG ingested/private source data and generated artifacts
+rag/data/raw/
+rag/data/processed/
+
+# Runtime logs
+logs/
+rag/logs/
+*.log
+
+# Python cache/build artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+rag/__pycache__/
+rag/.pytest_cache/
+rag/.mypy_cache/
+rag/.ruff_cache/
+rag/.venv/
+rag/venv/
+
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo

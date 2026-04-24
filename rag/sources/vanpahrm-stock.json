@@ -1,0 +1,27 @@
+{
+  "project_key": "vanpahrm-stock",
+  "source_key": "workspace-vanpahrm-stock",
+  "cleanup_source_keys": [
+    "vanpahrm-stock"
+  ],
+  "name": "vanpahrm-stock",
+  "root_path": "/Users/dominic/Workspace/vanpahrm-stock",
+  "include": [
+    "AGENTS.md",
+    "README.md",
+    "nest-cli.json",
+    "package.json",
+    ".github/workflows/**/*.yml",
+    "apps/*/src/main.ts",
+    "apps/*/src/**/*.module.ts",
+    "libs/*/src/**/*.module.ts",
+    "docs/ai/**/*.md"
+  ],
+  "exclude": [
+    "env/**",
+    ".env*",
+    "node_modules/**",
+    "dist/**",
+    "coverage/**"
+  ]
+}
