@@ -12,31 +12,30 @@
         "baseURL": "http://127.0.0.1:32124/v1"
       },
       "models": {
-        "auto": { "name": "Auto" },
-
-        "composer-2": { "name": "Composer 2" },
-        "composer-2-fast": { "name": "Composer 2 (Fast)" },
-  
-
-        "claude-4.6-opus-high": { "name": "Claude 4.6 Opus (High)" },
-        "claude-4.6-opus-max": { "name": "Claude 4.6 Opus (Max)" },
-        "claude-4.6-opus-high-thinking": { "name": "Claude 4.6 Opus (High, Thinking)" },
-        "claude-4.6-opus-high-thinking-fast": { "name": "Claude 4.6 Opus (High, Thinking, Fast)" },
-        "claude-4.6-opus-max-thinking": { "name": "Claude 4.6 Opus (Max, Thinking)" },
-        "claude-4.6-opus-max-thinking-fast": { "name": "Claude 4.6 Opus (Max, Thinking, Fast)" },
-        "claude-4.6-sonnet-medium": { "name": "Claude 4.6 Sonnet (Medium)" },
-        "claude-4.6-sonnet-medium-thinking": { "name": "Claude 4.6 Sonnet (Medium, Thinking)" },
-
-        "claude-opus-4-7-low": { "name": "Claude Opus 4.7 (Low)" },
-        "claude-opus-4-7-medium": { "name": "Claude Opus 4.7 (Medium)" },
-        "claude-opus-4-7-high": { "name": "Claude Opus 4.7 (High)" },
-        "claude-opus-4-7-xhigh": { "name": "Claude Opus 4.7 (XHigh)" },
-        "claude-opus-4-7-max": { "name": "Claude Opus 4.7 (Max)" },
-        "claude-opus-4-7-thinking-low": { "name": "Claude Opus 4.7 (Low, Thinking)" },
-        "claude-opus-4-7-thinking-medium": { "name": "Claude Opus 4.7 (Medium, Thinking)" },
-        "claude-opus-4-7-thinking-high": { "name": "Claude Opus 4.7 (High, Thinking)" },
-        "claude-opus-4-7-thinking-xhigh": { "name": "Claude Opus 4.7 (XHigh, Thinking)" },
-        "claude-opus-4-7-thinking-max": { "name": "Claude Opus 4.7 (Max, Thinking)" },
+        "auto": {
+          "name": "Auto"
+        },
+        "composer-2": {
+          "name": "Composer 2"
+        },
+        "composer-2-fast": {
+          "name": "Composer 2 (Fast)"
+        },
+        "gpt-5.5-medium": {
+          "name": "GPT-5.5 1M"
+        },
+        "claude-4.6-sonnet-medium": {
+          "name": "Claude 4.6 Sonnet (Medium)"
+        },
+        "gpt-5.4-medium": {
+          "name": "GPT-5.4 1M"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        },
+        "kimi-k2.5": {
+          "name": "Kimi K2.5"
+        }
       }
     }
   },
