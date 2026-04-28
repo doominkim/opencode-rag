@@ -2,7 +2,8 @@
 import { logger } from "../lib/logger.ts"
 
 const ROUTING_REMINDER = [
-  "[auto-delegate] 자동 위임 권고 (사용자 override가 항상 우선):",
+  "[auto-delegate] 위임 정책 (사용자 override가 항상 우선):",
+  "user prompt가 아래 도메인 키워드와 매칭되면, 직접 처리 전에 Task tool로 위임할지 먼저 결정한다.",
   "- DB(schema/migration/index) → db-designer",
   "- API(endpoint/handler/middleware) → api",
   "- UI/UX(component/tailwind/aria) → frontend (스크린샷이면 multimodal-looker 선행)",
@@ -15,7 +16,8 @@ const ROUTING_REMINDER = [
   "- 커밋 메시지 → api-commit-message",
   "- 코드 탐색 → explore",
   "- 구조/책임 배치 → architect",
-  "router가 prompt 패턴을 감지하면 추가 reminder를 붙입니다. 무시하고 직접 처리해도 됩니다.",
+  "auto-delegate router가 매칭하면 user message 끝에 confidence와 Task 호출 템플릿을 주입한다.",
+  "HIGH/explicit confidence는 위임을 우선하고, MEDIUM은 직접 처리도 허용한다.",
 ].join("\n")
 
 export async function systemInject(_ctx, _input, output) {
