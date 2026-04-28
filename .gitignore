@@ -24,6 +24,9 @@ rag/logs/
 # Local backup/temp files
 *.bak.*
 
+# Plan runtime state (plan 본문은 commit, state는 ignore)
+.plans/*.state.json
+
 # Python cache/build artifacts
 __pycache__/
 *.py[cod]

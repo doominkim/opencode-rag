@@ -16,6 +16,9 @@ permission:
   glob: allow
   grep: allow
   bash:
+    git status*: allow
+    git diff*: allow
+    git show --stat*: allow
     python3 /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     '*': deny
