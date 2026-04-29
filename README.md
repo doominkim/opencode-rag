@@ -85,6 +85,7 @@ prompt 키워드 또는 명시 호출로 위임된다. `plugin/auto-delegate`가
 | `prometheus` | plan 작성 (`.plans/<slug>.md`) + interview mode | deep-think |
 | `metis` | plan 단계별 실행 (마일스톤 단위) | deep-think |
 | `api` | API 설계/구현 | deep-think |
+| `backend` | service, cron, batch, worker, domain logic 구현 | deep-think |
 | `db-designer` | schema, index, migration | deep-think |
 | `frontend` | UI/UX 구현 | deep-think |
 | `security` | 인증/인가/보안 검토 | research |

@@ -17,6 +17,7 @@ export const AGENT_PRESET = {
   "prometheus":        "deep-think",
   "metis":             "deep-think",
   "api":               "deep-think",
+  "backend":           "deep-think",
   "db-designer":       "deep-think",
   "frontend":          "deep-think",
   "security":          "research",

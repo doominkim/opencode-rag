@@ -85,6 +85,7 @@ CONTEXT: <배경, 관련 파일, 이미 안 사실>
 | 설계 | architect |
 | plan 분해 | prometheus → metis |
 | API | api |
+| Backend service/cron/batch | backend |
 | DB | db-designer |
 | UI | frontend |
 | 보안 | security |

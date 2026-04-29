@@ -32,6 +32,16 @@ export const AGENTS = [
     reason: "리뷰 요청 키워드",
   },
   {
+    name: "backend",
+    category: "preset_deep_think",
+    triggers: [
+      /\b[A-Za-z0-9_]*(service|cron|batch|worker|scheduler|queue|job)\b/i,
+      /\b(use-?case|domain\s+logic|business\s+logic|aggregation|aggregate)\b/i,
+      /(비즈니스\s*로직|도메인\s*로직|배치|스케줄러|작업\s*큐|집계|Slack\s*알림)/i,
+    ],
+    reason: "Backend service/cron/batch/domain logic 키워드",
+  },
+  {
     name: "verifier",
     category: "preset_quick",
     triggers: [/\b(test|build|lint|tsc|pytest|jest|verify|검증)\b/i],

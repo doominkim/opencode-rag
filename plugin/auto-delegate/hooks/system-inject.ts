@@ -6,6 +6,7 @@ const ROUTING_REMINDER = [
   "user prompt가 아래 도메인 키워드와 매칭되면, 직접 처리 전에 Task tool로 위임할지 먼저 결정한다.",
   "- DB(schema/migration/index) → db-designer",
   "- API(endpoint/handler/middleware) → api",
+  "- Backend(service/cron/batch/worker/domain logic) → backend",
   "- UI/UX(component/tailwind/aria) → frontend (스크린샷이면 multimodal-looker 선행)",
   "- 보안(auth/secret/CVE) → security",
   "- 변경 리뷰 → reviewer",

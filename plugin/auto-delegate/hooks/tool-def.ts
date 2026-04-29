@@ -11,7 +11,7 @@ const TASK_PREAMBLE = [
   "위임이 디폴트, 직접 작업은 super simple할 때만 (단일 줄 fix / typo / 한 문장 답변).",
   "Task 호출 시 6필드 contract 권장: TASK / EXPECTED OUTCOME / REQUIRED TOOLS / MUST DO / MUST NOT DO / CONTEXT.",
   "subagent_type은 등록된 agent id만 사용한다. 일반 fallback이 필요하면 general-purpose agent가 등록되어 있다.",
-  "가능하면 general-purpose보다 api/db-designer/frontend/reviewer/verifier 등 구체 specialist를 우선한다.",
+  "가능하면 general-purpose보다 api/backend/db-designer/frontend/reviewer/verifier 등 구체 specialist를 우선한다.",
   "독립적인 영역은 한 메시지에 다중 Task 콜로 병렬 호출.",
   "",
 ].join("\n")

@@ -54,6 +54,8 @@
 - 커밋 메시지 작성:
   - `commit-message`
   - Task tool 또는 해당 subagent를 사용할 수 없는 세션에서도 primary agent는 `commit-message`의 출력 규칙, 특히 한글 제목 규칙을 직접 준수한다.
+- Backend service / cron / batch / worker / domain logic 구현:
+  - `backend`
 - DB 스키마, 테이블, 인덱스, 마이그레이션 설계:
   - `db-designer`
 - 일반 조사, 단순 보조 작업, 명확히 분류되지 않는 작업:
@@ -81,6 +83,7 @@
 | 빌드/테스트/검증 | `verifier` | `quick` |
 | DB schema, migration | `db-designer` | `deep-think` |
 | API 설계/구현 | `api` | `deep-think` |
+| Backend service, cron, batch, worker 구현 | `backend` | `deep-think` |
 | UI/UX 구현 | `frontend` | `deep-think` |
 | 보안/인증/인가 검토 | `security` | `research` |
 | 커밋 메시지 작성 | `commit-message` | `quick` |
@@ -125,6 +128,7 @@
 - `research`: 넓은 코드 탐색, 외부 repo 분석, 문서 비교. `explore` / `oracle` / `librarian`. fallback이 필요하면 `general-purpose`.
 - `architecture`: 구조 변경, 경계 판단, 책임 배치. `architect`를 사용한다.
 - `api`: REST/GraphQL/RPC 계약·핸들러·미들웨어. `api`를 사용한다.
+- `backend`: service, cron, batch, worker, scheduler, queue, domain/business logic 구현. `backend`를 사용한다.
 - `frontend`: UI/UX, 컴포넌트, 스타일링, 접근성, 반응형. `frontend`. 시각 자료가 있으면 `multimodal-looker` 선행.
 - `db`: schema, index, migration, 쿼리 성능. `db-designer`를 사용한다.
 - `security`: 인증/인가, secret/token, CVE, injection류. `security`를 사용한다.
@@ -296,6 +300,7 @@
 - `prometheus`: plan 작성 + interview mode (plan 전 모호 항목 ≤3 질문)
 - `metis`: plan 마일스톤 단위 실행. 한 번에 한 마일스톤
 - `api`: REST/GraphQL/RPC API 계약·핸들러·미들웨어·에러 모델 설계·구현
+- `backend`: service, cron, batch, worker, scheduler, queue, domain/business logic 구현. API 계약은 `api`, DB schema/migration은 `db-designer`로 분리
 - `db-designer`: DB 스키마, 엔티티, 인덱스, 마이그레이션 리스크 검토
 - `frontend`: UI/UX, 컴포넌트, 스타일링, 접근성, 반응형 구현
 - `security`: 인증/인가, 권한 모델, secret/token, CVE, injection류 검토

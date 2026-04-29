@@ -28,6 +28,16 @@ function loadRouter(AGENTS) {
   return Function("AGENTS", `${source}\nreturn { matchAgent, route }`)(AGENTS)
 }
 
+function loadPresets() {
+  const source = readFileSync("plugin/auto-delegate/lib/presets.ts", "utf8")
+    .replace(/^\/\/ @ts-nocheck\n+/, "")
+    .replace("export const PRESETS =", "const PRESETS =")
+    .replace("export const AGENT_PRESET =", "const AGENT_PRESET =")
+    .replace("export function presetForAgent", "function presetForAgent")
+
+  return Function(`${source}\nreturn { PRESETS, AGENT_PRESET, presetForAgent }`)()
+}
+
 function loadPermissionGate(detectDestructive) {
   const source = readFileSync("plugin/auto-delegate/hooks/permission-gate.ts", "utf8")
     .replace(/^\/\/ @ts-nocheck\n+/, "")
@@ -79,8 +89,19 @@ test("router maps common prompts to expected agents", () => {
 
   assert.equal(router.route("커밋 메시지 만들어줘").agents[0]?.agent, "commit-message")
   assert.equal(router.route("schema migration index 검토").agents[0]?.agent, "db-designer")
+  assert.equal(router.route("BISlackCronService Slack 알림 집계 수정").agents[0]?.agent, "backend")
+  assert.equal(router.route("service layer domain logic 추가").agents[0]?.agent, "backend")
+  assert.equal(router.route("review service changes").agents[0]?.agent, "reviewer")
+  assert.equal(router.route("service endpoint 구현").agents[0]?.agent, "api")
+  assert.equal(router.route("service migration 검토").agents[0]?.agent, "db-designer")
   assert.equal(router.route("@reviewer 이 변경 검토해줘").confidence, "explicit")
+  assert.equal(router.route("@backend 배치 작업 구현").confidence, "explicit")
   assert.equal(router.route("grep으로 위치 찾아줘").agents[0]?.agent, "explore")
+})
+
+test("backend uses deep-think preset", () => {
+  const { presetForAgent } = loadPresets()
+  assert.equal(presetForAgent("backend")?.name, "deep-think")
 })
 
 test("permissionGate detects destructive commands across SDK input shapes", async () => {
