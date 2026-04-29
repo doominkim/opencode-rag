@@ -23,10 +23,11 @@ export const AGENT_PRESET = {
   "reviewer":          "research",
   "oracle":            "research",
   "explore":           "research",
+  "general-purpose":   "research",
   "multimodal-looker": "research",
   "verifier":          "quick",
   "librarian":         "quick",
-  "api-commit-message":"quick",
+  "commit-message":    "quick",
 }
 
 export function presetForAgent(agent) {

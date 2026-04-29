@@ -55,7 +55,7 @@ prompt 키워드 또는 명시 호출로 위임된다. `plugin/auto-delegate`가
 | `explore` | 코드/문서 탐색 | research |
 | `librarian` | 파일 위치, 명명 패턴 | quick |
 | `multimodal-looker` | 스크린샷/Figma 검토 | research |
-| `api-commit-message` | 커밋 메시지 작성 | quick |
+| `commit-message` | 커밋 메시지 작성 | quick |
 
 전체 매트릭스는 `AGENTS.md` → Delegation Matrix 참조.
 

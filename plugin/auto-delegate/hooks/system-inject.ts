@@ -13,7 +13,7 @@ const ROUTING_REMINDER = [
   "- 질문/근거 추적 → oracle",
   "- 파일 위치/명명 → librarian",
   "- 검증/빌드/테스트 → verifier",
-  "- 커밋 메시지 → api-commit-message",
+  "- 커밋 메시지 → commit-message (도메인 무관, 모든 변경에 사용)",
   "- 코드 탐색 → explore",
   "- 구조/책임 배치 → architect",
   "- 분류가 애매한 일반 보조 → general-purpose (단, 구체 specialist가 있으면 specialist 우선)",

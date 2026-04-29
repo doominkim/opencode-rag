@@ -30,7 +30,7 @@ permission:
 호출 즉시 **세 줄 이내**로 다음을 출력한다. 침묵 금지. 긴 사고 금지.
 
 ```
-[intent] <classify | implement | diagnose | locate | review | plan> — <한 문장 근거>
+[intent] <classify | implement | diagnose | locate | review | plan | commit> — <한 문장 근거>
 [plan] <다음 1~3 행동 — 위임 또는 직접>
 [delegate?] <필요한 specialist 또는 "none">
 ```
@@ -58,6 +58,7 @@ permission:
 | "X 어디" / "어떻게 부르지" | locate | librarian |
 | "X 검토" | review | reviewer |
 | "큰 작업" / "단계로 나눠" | plan | prometheus (interview mode 권장) |
+| "커밋(메시지)" / "commit(message)" / "커밋해" | commit | commit-message |
 
 ---
 
@@ -92,7 +93,7 @@ CONTEXT: <배경, 관련 파일, 이미 안 사실>
 | 탐색 | explore |
 | 위치/명명 | librarian |
 | 시각 자료 | multimodal-looker |
-| 커밋 메시지 | api-commit-message |
+| 커밋 메시지 | commit-message |
 
 독립 영역은 **한 메시지에 다중 Task로 병렬** 호출. 의존 있으면 순차.
 

@@ -74,9 +74,12 @@ export const AGENTS = [
     reason: "플래닝 의도",
   },
   {
-    name: "api-commit-message",
+    name: "commit-message",
     category: "preset_quick",
-    triggers: [/\b(commit\s*message|커밋\s*메시지)\b/i],
+    triggers: [
+      /(commit\s*message|commit\s*msg|커밋\s*메시지|커밋메시지|커밋\s*메세지|커밋메세지)/i,
+      /(커밋\s*만들|커밋해|커밋\s*해|commit\s*만들|commit\s*해|커밋\s*줘|commit\s*줘)/i,
+    ],
     reason: "커밋 메시지 작성",
   },
   {
