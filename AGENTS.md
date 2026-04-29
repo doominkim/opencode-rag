@@ -22,6 +22,13 @@
 
 ---
 
+## Incident Ratchet
+- 실제 harness 실패를 막기 위해 `AGENTS.md`, hook, test, command, agent 정책을 바꾸면 `incidents/YYYY-MM-DD-<slug>.md`를 작성한다.
+- incident는 과거 사실과 정책 근거를 남기는 용도다. 일반 버그, typo, 단순 refactor는 기록하지 않는다.
+- incident 형식은 `incidents/README.md`를 따른다.
+
+---
+
 ## Subagent Delegation Policy
 
 > **이 저장소의 디폴트 바이어스는 DELEGATE다.** 직접 작업이 아니라 specialist 위임이 산출물 품질의 기본 경로다 (orchestrator-first 패턴).

@@ -12,6 +12,7 @@
 | `skills/` | domain skill과 preset 문서 |
 | `plugin/auto-delegate/` | routing reminder, destructive gate, session persistence hook |
 | `rag/` | PostgreSQL + pgvector 기반 RAG 스크립트와 설정 |
+| `incidents/` | harness 실패 기록과 정책 근거 |
 
 ## 검증 명령
 
@@ -36,7 +37,7 @@ npm run verify:rag
 ## Commit 대상
 
 commit 대상:
-- `agent/`, `command/`, `skills/`, `plugin/`, `rag/scripts`, `rag/sql`, `rag/sources`, `rag/jobs`, `docs/`, `.github/`, `package.json`, `package-lock.json`
+- `agent/`, `command/`, `skills/`, `plugin/`, `rag/scripts`, `rag/sql`, `rag/sources`, `rag/jobs`, `docs/`, `incidents/`, `.github/`, `package.json`, `package-lock.json`
 
 commit 제외:
 - `rag/.env`, `logs/`, `rag/logs/`, `.theseus/`, `.plans/*.state.json`, `node_modules/`

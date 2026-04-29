@@ -20,6 +20,7 @@ OpenCode 전역 설정 저장소. subagent, slash command, skill, plugin, 그리
 │   ├── _presets/          #   quick / research / deep-think / cheap-bulk
 │   └── domain/            #   rag-ops / git-master / review-work / frontend-ui-ux
 ├── docs/                  # configuration / orchestration / RAG reference
+├── incidents/             # harness 실패 기록과 정책 근거
 ├── scripts/verify.mjs     # repo-wide non-destructive verification
 ├── tests/*.test.mjs       # auto-delegate safety tests
 ├── plugin/
@@ -55,6 +56,19 @@ npm run verify:rag
 | `docs/reference/configuration.md` | 설정 파일, plugin safety, skill discovery, commit 대상 |
 | `docs/guide/orchestration.md` | `/work`, plan, verify 진입점 선택 기준 |
 | `docs/reference/rag.md` | RAG read-only 명령, destructive 승인 절차, 삭제 범위 |
+
+---
+
+## Incidents (`incidents/`)
+
+`incidents/`는 harness 변경의 근거를 남기는 기록소다. 실제 실패가 있었고, 그 실패를 막기 위해 `AGENTS.md`, hook, test, command, agent 정책 중 하나를 바꾼 경우에만 작성한다.
+
+예:
+- `grep` regex 실패 → `rg` 우선 검색 규칙 추가
+- `auto-delegate` module resolution 실패 → local plugin dependency와 verify smoke check 추가
+- `permission.ask` input shape 오판 → permission gate 후보 필드와 테스트 보강
+
+일반 버그, typo, 단순 refactor는 incident로 기록하지 않는다.
 
 ---
 
