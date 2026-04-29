@@ -1,7 +1,7 @@
 ---
 name: deep-think
 description: 큰 추론, 설계, 위험 검토용 고비용 프리셋.
-model: anthropic/claude-opus-4-7
+model: openai/gpt-5.5
 temperature: 0.4
 max_tokens: 16384
 ---

@@ -20,9 +20,9 @@ OpenCode 전역 설정 저장소. subagent, slash command, skill, plugin, 그리
 │   ├── _presets/          #   quick / research / deep-think / cheap-bulk
 │   └── domain/            #   rag-ops / git-master / review-work / frontend-ui-ux
 ├── plugin/
-│   ├── auto-delegate/     # prompt 패턴 감지 → subagent reminder
-│   └── cursor-acp.js      # Cursor ACP provider
+│   └── auto-delegate/     # prompt 패턴 감지 → subagent reminder
 ├── .plans/                # plan 본문(.md) commit / 상태(.state.json) gitignore
+├── .theseus/              # theseus/metis 세션의 자동 영속화 state — gitignore
 └── rag/                   # PostgreSQL + pgvector 기반 RAG
     ├── scripts/*.py       # ingest / sync / search CLI
     ├── sources/*.json     # ingest 범위
@@ -35,12 +35,15 @@ OpenCode 전역 설정 저장소. subagent, slash command, skill, plugin, 그리
 
 ## Subagents (`agent/`)
 
+> **이 저장소의 디폴트 바이어스는 DELEGATE다.** 직접 작업은 super simple할 때만, 그 외엔 specialist 위임이 디폴트.
+
 prompt 키워드 또는 명시 호출로 위임된다. `plugin/auto-delegate`가 user message에 위임 권고 텍스트와 Task 호출 템플릿을 주입하지만, **실제 위임은 primary agent가 Task tool을 호출해야 일어난다.** plugin이 직접 agent를 바꾸지는 못한다 (OpenCode plugin SDK 제약).
 
 | agent | 용도 | preset |
 |---|---|---|
+| `theseus` | **orchestrator** — 의도 게이트 → 위임 → 검증 끝까지 끌고 감 | deep-think |
 | `architect` | 설계, 책임 배치, 레이어링 | deep-think |
-| `prometheus` | plan 작성 (`.plans/<slug>.md`) | deep-think |
+| `prometheus` | plan 작성 (`.plans/<slug>.md`) + interview mode | deep-think |
 | `metis` | plan 단계별 실행 (마일스톤 단위) | deep-think |
 | `api` | API 설계/구현 | deep-think |
 | `db-designer` | schema, index, migration | deep-think |
@@ -56,12 +59,23 @@ prompt 키워드 또는 명시 호출로 위임된다. `plugin/auto-delegate`가
 
 전체 매트릭스는 `AGENTS.md` → Delegation Matrix 참조.
 
+### theseus orchestrator
+
+큰/모호한/cross-domain 작업은 `/work`로 진입해 theseus가 처리한다:
+1. **의도 게이트** — 표면 표현을 실제 의도로 매핑 (`[intent] <분류> — 근거`)
+2. **위임 contract 6필드** — TASK / EXPECTED OUTCOME / REQUIRED TOOLS / MUST DO / MUST NOT DO / CONTEXT
+3. **병렬 위임** — 독립 영역은 한 메시지에 다중 Task
+4. **검증 게이트** — 영역별 비파괴 검증 (tsc/nest build/pytest/jest/py_compile)
+5. **재위임 루프** — 실패 시 최대 3회 재위임, 초과 시 사용자에게 중단 보고
+6. **persistence** — 멈추지 않음. 단, destructive·결제·다중 해석 시엔 사용자 승인에서 멈춤
+
 ---
 
 ## Slash Commands (`command/`)
 
 | command | agent | 설명 |
 |---|---|---|
+| `/work <task>` | theseus | orchestrator 진입 — 의도 게이트 → 위임 → 검증 |
 | `/save-plan <slug>` | prometheus | 현재 작업을 마일스톤 plan으로 분해해 `.plans/<slug>.md`에 저장 |
 | `/resume-plan <slug>` | metis | plan + state를 로드해 다음 마일스톤만 실행 |
 | `/review-work` | reviewer | 변경사항 리뷰 (회귀, 운영 edge case) |
@@ -101,24 +115,29 @@ prompt 키워드 또는 명시 호출로 위임된다. `plugin/auto-delegate`가
 
 ## Plugin (`plugin/auto-delegate/`)
 
-OpenCode hook으로 동작하는 위임 보조 플러그인.
+OpenCode hook으로 동작하는 위임·정책 보조 플러그인. 현재 11개 hook 사용.
 
-| hook | 역할 |
-|---|---|
-| `chat.message` | user prompt에서 trigger 패턴 매칭 → confidence 산출 후 위임 권고 + Task 호출 템플릿 삽입 |
-| `chat.params` | 현재 active agent의 preset에 맞춰 `temperature` / `maxOutputTokens` 실제 override |
-| `experimental.chat.system.transform` | system prompt에 위임 정책 텍스트 주입 |
-| `tool.execute.before` | bash 명령에서 destructive 패턴 감지 시 **warning 로깅** (block 아님) |
-| `tool.execute.after` | subagent 실패 시 복구 힌트 로깅 |
-| `event` | 이벤트 로깅 |
+| hook | 파일 | 역할 |
+|---|---|---|
+| `chat.message` | `hooks/user-prompt.ts` + `hooks/state-persist.ts` | user prompt 패턴 매칭 + Task 호출 템플릿 삽입 + theseus/metis 세션 agent 등록 + 새 세션 첫 prompt에 latest state resume 주입 |
+| `chat.params` | `hooks/chat-params.ts` | active agent의 preset → `temperature`/`maxOutputTokens` 실제 override |
+| `experimental.chat.system.transform` | `hooks/system-inject.ts` | system prompt에 위임 정책 텍스트 주입 |
+| `experimental.session.compacting` | `hooks/session-compact.ts` | 세션 압축 시 보존 체크리스트(orchestrator·plan·위임 정책) 컨텍스트 추가 |
+| `experimental.compaction.autocontinue` | `hooks/auto-continue.ts` | theseus/metis 세션은 압축 후 자동 continue 강제 (persistence) |
+| `permission.ask` | `hooks/permission-gate.ts` | destructive bash 명령은 강제 `ask` (자동 allow 차단) |
+| `command.execute.before` | `hooks/command-pre.ts` | `/work`·`/save-plan`·`/resume-plan`·`/rag-safe-work` 실행 전 preflight 안내 주입 |
+| `tool.definition` | `hooks/tool-def.ts` | Task tool description에 "DELEGATE 디폴트" 정책 prepend |
+| `tool.execute.before` | `hooks/tool-pre.ts` | bash destructive 패턴 감지 시 warning 로깅 |
+| `tool.execute.after` | `hooks/error-recover.ts` + `hooks/state-persist.ts` | subagent 실패 복구 힌트 + theseus/metis 세션 tool call 누적 |
+| `event` | `hooks/event-tap.ts` + `hooks/state-persist.ts` | 이벤트 로깅 + session.idle/compacted 시 `.theseus/<sessionID>.json` 영속화 |
 
 ### 동작 범위 (가능 vs 불가능)
 
 OpenCode plugin SDK 한계상 다음을 구분한다:
-- **가능**: user message·system prompt 텍스트 주입, sampling params (`temperature`, `topP`, `topK`, `maxOutputTokens`) override, 도구 호출 전·후 로깅.
-- **불가능**: agent 자체 교체, 도구 호출 차단, 모델 ID 변경.
+- **가능**: user message·system prompt 텍스트 주입, sampling params (`temperature`/`topP`/`topK`/`maxOutputTokens`) override, **permission 게이트로 명령 ask 강제**, slash command preflight 안내, tool description 변경, 압축 컨텍스트 보존, 압축 후 자동 continue 제어, 도구 호출 전·후 로깅.
+- **불가능**: agent 자체 교체, 모델 ID 변경, 도구 호출 결과 가로채기.
 
-따라서 "위임"은 권고이고, 강제는 아니다. primary agent가 권고를 받아 Task tool을 직접 호출해야 실제 subagent 실행이 일어난다.
+위임 자체는 여전히 권고지만, **destructive 명령은 permission.ask 강제로 실제 게이트가 작동한다** (Codex가 지적한 "warning만" 한계 해소).
 
 ### Confidence 등급
 
@@ -134,6 +153,34 @@ OpenCode plugin SDK 한계상 다음을 구분한다:
 
 `lib/presets.ts`의 `AGENT_PRESET` 매핑이 active agent마다 sampling params를 override 한다. 모델 ID는 사용자가 직접 선택한다 (chat.params로는 변경 불가).
 
+### Persistence (theseus / metis)
+
+`hooks/auto-continue.ts`는 active agent가 `theseus`나 `metis`일 때 `experimental.compaction.autocontinue`의 `enabled`를 강제로 true로 둔다. 그 외 세션은 OpenCode 기본값을 따른다.
+
+### Session State 자동 영속화 (.theseus/)
+
+theseus / metis 세션은 다음을 자동으로 `.theseus/<sessionID>.json`에 기록 (gitignore):
+
+- `agent`, `started`, `lastActivity`, `intent`(캡처되면), `lastUserText`(600자), `toolCalls`(최근 50개, args는 200자 preview)
+
+트리거:
+- `session.idle` 또는 `session.compacted` 이벤트 발생 시 자동 dump
+- 매 chat.message / tool.execute.after에서 메모리 캐시에 누적
+
+`.theseus/latest.json`은 가장 최근 활동 sessionID에 대한 포인터. 새 세션의 첫 user message에서 user-prompt hook이 자동으로 latest state를 reminder로 주입한다 (현재 agent가 theseus/metis거나 latest와 같은 agent일 때).
+
+→ `/handoff` 같은 수동 인계 명령 없이도 session 간 컨텍스트가 자동 영속화된다. oh-my-openagent의 `.sisyphus/` 패턴과 같은 방향.
+
+### 압축 보존 (session-compact)
+
+`hooks/session-compact.ts`는 압축 prompt의 `context` 배열에 다음을 push:
+- 현재 active orchestrator + 의도 게이트 결과
+- 진행 중 plan slug + 마일스톤 위치
+- 위임 흐름과 검증 상태
+- destructive 승인 대기 항목
+- 사용자가 명시한 제약, 실패 검증과 재시도 횟수
+- 디폴트 바이어스 = DELEGATE
+
 ### Smoke Test
 
 플러그인이 실제로 로드됐는지 확인:
@@ -144,19 +191,42 @@ tail -n 200 logs/auto-delegate.jsonl
 # init 확인
 grep -m1 '"event":"plugin.init"' logs/auto-delegate.jsonl
 
-# router 매칭 확인 (DB 키워드 prompt를 한 번 던진 뒤)
+# router 매칭 (DB 키워드 prompt 후)
 grep '"event":"router.match"' logs/auto-delegate.jsonl | tail -5
 
-# preset 적용 확인 (subagent로 진입한 뒤)
+# preset 적용 (subagent 진입 후)
 grep '"event":"chat-params.preset-applied"' logs/auto-delegate.jsonl | tail -5
 
-# destructive warning 확인
+# destructive 게이트 (위험 bash 시도 후)
+grep '"event":"permission-gate.force-ask"' logs/auto-delegate.jsonl | tail -5
 grep '"event":"tool-pre.destructive-detected"' logs/auto-delegate.jsonl | tail -5
+
+# 압축 보존 (세션 압축 후)
+grep '"event":"session-compact.preserve-checklist"' logs/auto-delegate.jsonl | tail -5
+
+# autocontinue (theseus/metis 압축 후)
+grep '"event":"auto-continue.persist"' logs/auto-delegate.jsonl | tail -5
+
+# command preflight (/work 등 실행 후)
+grep '"event":"command-pre.preflight-injected"' logs/auto-delegate.jsonl | tail -5
+
+# Task tool description 패치 (도구 정의 노출 시점에 1회)
+grep '"event":"tool-def.patched"' logs/auto-delegate.jsonl | tail -5
+
+# state 자동 영속화 (theseus/metis 세션 idle 시)
+grep '"event":"state-persist.dumped"' logs/auto-delegate.jsonl | tail -5
+
+# resume 주입 (새 세션 첫 prompt 시)
+grep '"event":"user-prompt.resume-injected"' logs/auto-delegate.jsonl | tail -5
+
+# 영속화된 state 직접 보기
+ls -la .theseus/
+cat .theseus/latest.json
 ```
 
 `logs/auto-delegate.jsonl`은 gitignore 대상.
 
-trigger 패턴은 `lib/agents.ts`, agent→preset 매핑은 `lib/presets.ts`에 정의. `opencode.json`의 `plugin` 배열에 `auto-delegate`로 등록.
+trigger 패턴은 `lib/agents.ts`, agent→preset 매핑은 `lib/presets.ts`, destructive 패턴은 `lib/patterns.ts`에 정의. `opencode.json`의 `plugin` 배열에 `auto-delegate`로 등록.
 
 ---
 

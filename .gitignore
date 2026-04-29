@@ -27,6 +27,9 @@ rag/logs/
 # Plan runtime state (plan 본문은 commit, state는 ignore)
 .plans/*.state.json
 
+# Theseus/metis 자동 영속화된 session state — 로컬 전용
+.theseus/
+
 # Python cache/build artifacts
 __pycache__/
 *.py[cod]

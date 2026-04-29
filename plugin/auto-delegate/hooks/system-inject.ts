@@ -16,6 +16,8 @@ const ROUTING_REMINDER = [
   "- 커밋 메시지 → api-commit-message",
   "- 코드 탐색 → explore",
   "- 구조/책임 배치 → architect",
+  "- 분류가 애매한 일반 보조 → general-purpose (단, 구체 specialist가 있으면 specialist 우선)",
+  "Task subagent_type에는 등록된 agent id만 사용한다. general-purpose fallback agent가 등록되어 있으나 남용하지 않는다.",
   "auto-delegate router가 매칭하면 user message 끝에 confidence와 Task 호출 템플릿을 주입한다.",
   "HIGH/explicit confidence는 위임을 우선하고, MEDIUM은 직접 처리도 허용한다.",
 ].join("\n")
