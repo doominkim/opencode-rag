@@ -1,7 +1,9 @@
 node_modules
-package.json
-package-lock.json
 bun.lock
+
+# Project instructions are part of this config repo.
+!AGENTS.md
+!**/AGENTS.md
 
 # Local secrets
 .env

@@ -1,0 +1,16 @@
+{
+  "name": "opencode-godmode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "verify": "node scripts/verify.mjs",
+    "verify:plugin": "node --test tests/*.test.mjs",
+    "verify:rag": "python3 -m py_compile rag/scripts/*.py"
+  },
+  "dependencies": {
+    "auto-delegate": "file:plugin/auto-delegate",
+    "@opencode-ai/plugin": "1.14.19"
+  }
+}

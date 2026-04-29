@@ -1,0 +1,11 @@
+{
+  "name": "auto-delegate",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "description": "Lifecycle hook plugin for routing reminders, destructive detection, and error recovery."
+}

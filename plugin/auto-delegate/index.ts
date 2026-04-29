@@ -29,11 +29,10 @@ export const AutoDelegate = async (ctx) => {
           errorRecover(ctx, input, output).catch((e) => logger.warn("hook.tool-after", e)),
           trackTool(ctx, input, output).catch((e) => logger.warn("hook.state-persist-tool", e)),
         ]),
-      "chat.message": (input, output) =>
-        Promise.all([
-          trackAgent(ctx, input, output).catch((e) => logger.warn("hook.state-persist-agent", e)),
-          userPrompt(ctx, input, output).catch((e) => logger.warn("hook.chat-message", e)),
-        ]),
+      "chat.message": async (input, output) => {
+        await trackAgent(ctx, input, output).catch((e) => logger.warn("hook.state-persist-agent", e))
+        await userPrompt(ctx, input, output).catch((e) => logger.warn("hook.chat-message", e))
+      },
       "chat.params": (input, output) =>
         chatParams(ctx, input, output).catch((e) => logger.warn("hook.chat-params", e)),
       "experimental.chat.system.transform": (input, output) =>

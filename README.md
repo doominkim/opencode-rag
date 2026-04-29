@@ -1,4 +1,4 @@
-# OpenCode Config
+# opencode-godmode
 
 OpenCode 전역 설정 저장소. subagent, slash command, skill, plugin, 그리고 PostgreSQL 기반 RAG 도구를 함께 관리한다.
 
@@ -19,6 +19,9 @@ OpenCode 전역 설정 저장소. subagent, slash command, skill, plugin, 그리
 ├── skills/                # 모델 preset + 도메인 skill
 │   ├── _presets/          #   quick / research / deep-think / cheap-bulk
 │   └── domain/            #   rag-ops / git-master / review-work / frontend-ui-ux
+├── docs/                  # configuration / orchestration / RAG reference
+├── scripts/verify.mjs     # repo-wide non-destructive verification
+├── tests/*.test.mjs       # auto-delegate safety tests
 ├── plugin/
 │   └── auto-delegate/     # prompt 패턴 감지 → subagent reminder
 ├── .plans/                # plan 본문(.md) commit / 상태(.state.json) gitignore
@@ -30,6 +33,28 @@ OpenCode 전역 설정 저장소. subagent, slash command, skill, plugin, 그리
     ├── sql/001_init.sql   # 스키마
     └── *-policy.json      # source authority / namespace 기본값
 ```
+
+---
+
+## Verification
+
+```bash
+npm run verify
+npm run verify:plugin
+npm run verify:rag
+```
+
+`npm run verify`는 markdown fence, JSON 문법, RAG Python compile, auto-delegate 핵심 테스트를 확인한다. CI도 같은 명령을 실행한다.
+
+---
+
+## Docs
+
+| 문서 | 내용 |
+|---|---|
+| `docs/reference/configuration.md` | 설정 파일, plugin safety, skill discovery, commit 대상 |
+| `docs/guide/orchestration.md` | `/work`, plan, verify 진입점 선택 기준 |
+| `docs/reference/rag.md` | RAG read-only 명령, destructive 승인 절차, 삭제 범위 |
 
 ---
 
@@ -66,7 +91,7 @@ prompt 키워드 또는 명시 호출로 위임된다. `plugin/auto-delegate`가
 2. **위임 contract 6필드** — TASK / EXPECTED OUTCOME / REQUIRED TOOLS / MUST DO / MUST NOT DO / CONTEXT
 3. **병렬 위임** — 독립 영역은 한 메시지에 다중 Task
 4. **검증 게이트** — 영역별 비파괴 검증 (tsc/nest build/pytest/jest/py_compile)
-5. **재위임 루프** — 실패 시 최대 3회 재위임, 초과 시 사용자에게 중단 보고
+5. **실패 처리** — subagent 호출 실패 시 재시도 루프 없이 원인 확인 후 직접 처리하거나 사용자에게 보고
 6. **persistence** — 멈추지 않음. 단, destructive·결제·다중 해석 시엔 사용자 승인에서 멈춤
 
 ---
@@ -189,35 +214,35 @@ theseus / metis 세션은 다음을 자동으로 `.theseus/<sessionID>.json`에 
 tail -n 200 logs/auto-delegate.jsonl
 
 # init 확인
-grep -m1 '"event":"plugin.init"' logs/auto-delegate.jsonl
+grep -m1 '"scope":"plugin.init"' logs/auto-delegate.jsonl
 
 # router 매칭 (DB 키워드 prompt 후)
-grep '"event":"router.match"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"router.match"' logs/auto-delegate.jsonl | tail -5
 
 # preset 적용 (subagent 진입 후)
-grep '"event":"chat-params.preset-applied"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"chat-params.preset-applied"' logs/auto-delegate.jsonl | tail -5
 
 # destructive 게이트 (위험 bash 시도 후)
-grep '"event":"permission-gate.force-ask"' logs/auto-delegate.jsonl | tail -5
-grep '"event":"tool-pre.destructive-detected"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"permission-gate.force-ask"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"tool-pre.destructive-detected"' logs/auto-delegate.jsonl | tail -5
 
 # 압축 보존 (세션 압축 후)
-grep '"event":"session-compact.preserve-checklist"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"session-compact.preserve-checklist"' logs/auto-delegate.jsonl | tail -5
 
 # autocontinue (theseus/metis 압축 후)
-grep '"event":"auto-continue.persist"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"auto-continue.persist"' logs/auto-delegate.jsonl | tail -5
 
 # command preflight (/work 등 실행 후)
-grep '"event":"command-pre.preflight-injected"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"command-pre.preflight-injected"' logs/auto-delegate.jsonl | tail -5
 
 # Task tool description 패치 (도구 정의 노출 시점에 1회)
-grep '"event":"tool-def.patched"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"tool-def.patched"' logs/auto-delegate.jsonl | tail -5
 
 # state 자동 영속화 (theseus/metis 세션 idle 시)
-grep '"event":"state-persist.dumped"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"state-persist.dumped"' logs/auto-delegate.jsonl | tail -5
 
 # resume 주입 (새 세션 첫 prompt 시)
-grep '"event":"user-prompt.resume-injected"' logs/auto-delegate.jsonl | tail -5
+grep '"scope":"user-prompt.resume-injected"' logs/auto-delegate.jsonl | tail -5
 
 # 영속화된 state 직접 보기
 ls -la .theseus/

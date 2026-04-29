@@ -28,6 +28,7 @@ permission:
     pytest*: allow
     jest*: allow
     nest build*: allow
+    rg*: allow
     '*': ask
   edit: allow
   external_directory:
@@ -60,6 +61,7 @@ permission:
 3. 검증 실패 시 다음 단계로 진행하지 않는다.
 4. plan 본문은 수정하지 않는다 (prometheus 영역).
 5. 실행 상태는 `.plans/<slug>.state.json`에 기록한다.
+6. 검색은 `rg`를 우선한다. regex 오류가 난 검색 결과를 근거로 구현하지 않는다.
 
 ---
 

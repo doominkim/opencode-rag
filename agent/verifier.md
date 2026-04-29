@@ -48,6 +48,7 @@ Working style:
 - If verification cannot be completed, say exactly why.
 - Distinguish between passing checks, failing checks, and checks not run.
 - Before choosing verification commands, consult RAG for workspace context if it affects the check plan.
+- Prefer `rg` for local search. Do not treat a regex-failed search as no results.
 
 Required output order:
 1. Verification run

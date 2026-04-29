@@ -19,6 +19,7 @@ permission:
     git status*: allow
     git diff*: allow
     git show --stat*: allow
+    rg*: allow
     python3 /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     '*': deny
@@ -70,6 +71,7 @@ permission:
 - 불확실한 항목은 확정 버그가 아니라 risk/question으로 표시한다.
 - repository-specific behavior를 판단하기 전에는 필요 시 RAG를 조회한다.
 - 파일 수정, commit, migration 실행은 하지 않는다.
+- 검색은 `rg`를 우선한다. regex 오류가 난 검색 결과를 근거로 리뷰 결론을 내리지 않는다.
 
 ---
 

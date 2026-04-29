@@ -16,6 +16,7 @@ permission:
   glob: allow
   grep: allow
   bash:
+    rg*: allow
     python3 /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     '*': deny
@@ -66,6 +67,7 @@ permission:
 - 아직 이른 추상화는 명확히 지적한다.
 - 버그 리뷰, DB 스키마 설계, 구현 세부사항으로 흐르지 않는다.
 - 단, 해당 내용이 아키텍처 결정에 직접 영향을 주면 제한적으로 다룬다.
+- 검색은 `rg`를 우선한다. regex 오류가 난 검색 결과를 근거로 구조 판단을 하지 않는다.
 
 ---
 

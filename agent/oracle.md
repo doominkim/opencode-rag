@@ -19,6 +19,7 @@ permission:
     git log*: allow
     git show*: allow
     git blame*: allow
+    rg*: allow
     python3 /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     '*': deny
@@ -50,6 +51,7 @@ permission:
 2. 코드와 RAG가 충돌하면 코드를 우선한다.
 3. 답이 추측이면 추측으로 표시한다.
 4. 답변 끝에 인용 출처(파일/라인 또는 RAG 결과)를 붙인다.
+5. 검색은 `rg`를 우선한다. regex 오류가 난 검색 결과를 근거로 판단하지 않는다.
 
 ---
 

@@ -16,6 +16,7 @@ permission:
   glob: allow
   grep: allow
   bash:
+    rg*: allow
     python3 /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
     '*': deny
@@ -73,6 +74,7 @@ permission:
 - application-level validation만 믿지 않고 DB-level guarantee가 필요한지 검토한다.
 - 과도한 인덱스, nullable 남발, 느슨한 unique rule을 경계한다.
 - 구현 세부 코드로 흐르지 않고 DB 설계 결정에 집중한다.
+- 검색은 `rg`를 우선한다. regex 오류가 난 검색 결과를 근거로 DB 설계 판단을 하지 않는다.
 
 ---
 

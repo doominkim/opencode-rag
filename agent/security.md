@@ -19,6 +19,7 @@ permission:
     git log*: allow
     git diff*: allow
     git show*: allow
+    rg*: allow
     npm audit*: allow
     npx snyk*: allow
     python3 /Users/dominic/.config/opencode/rag/scripts/search.py*: allow
@@ -63,6 +64,7 @@ permission:
 - 사용자 입력은 신뢰하지 않는 전제로 본다.
 - secret이 코드/로그/response에 들어가지 않는지 본다.
 - 결과는 severity 표시와 함께 보고한다.
+- 검색은 `rg`를 우선한다. regex 오류가 난 검색 결과를 근거로 판단하지 않는다.
 
 ---
 

@@ -24,7 +24,7 @@ theseus orchestrator에게 작업을 위임한다.
 2. 위임 시 6필드 contract: TASK / EXPECTED OUTCOME / REQUIRED TOOLS / MUST DO / MUST NOT DO / CONTEXT
 3. 독립 영역은 한 메시지에 병렬 위임
 4. 검증 게이트 통과 전 종료 금지
-5. 실패 시 최대 3회 재위임, 초과 시 사용자 보고
+5. subagent 호출 실패 시 재시도 루프를 만들지 않고 원인 확인 후 직접 처리하거나 사용자에게 보고
 
 ## 사용자 승인 게이트
 
