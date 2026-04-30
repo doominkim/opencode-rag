@@ -11,7 +11,7 @@ import { sessionCompacting } from "./hooks/session-compact.ts"
 import { permissionGate } from "./hooks/permission-gate.ts"
 import { commandPre } from "./hooks/command-pre.ts"
 import { toolDef } from "./hooks/tool-def.ts"
-import { notifyOnEvent, notifyOnPermissionAsk, notifyOnToolAfter } from "./hooks/notify.ts"
+import { notifyOnChatMessage, notifyOnEvent, notifyOnPermissionAsk, notifyOnToolAfter } from "./hooks/notify.ts"
 import { trackAgent, trackTool, persistOnEvent } from "./hooks/state-persist.ts"
 
 export const AutoDelegate = async (ctx) => {
@@ -35,6 +35,7 @@ export const AutoDelegate = async (ctx) => {
       "chat.message": async (input, output) => {
         await trackAgent(ctx, input, output).catch((e) => logger.warn("hook.state-persist-agent", e))
         await userPrompt(ctx, input, output).catch((e) => logger.warn("hook.chat-message", e))
+        await notifyOnChatMessage(ctx, input, output).catch((e) => logger.warn("hook.notify-chat-message", e))
       },
       "chat.params": (input, output) =>
         chatParams(ctx, input, output).catch((e) => logger.warn("hook.chat-params", e)),

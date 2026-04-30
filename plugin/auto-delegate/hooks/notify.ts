@@ -6,6 +6,7 @@ const FAILURE_MARKERS = ["error", "Error", "failed", "Failed", "exception", "Exc
 const CHOICE_MARKERS = ["[interview]", "선택", "결정", "답해주시면", "확인해야", "불확실", "질문"]
 const BLOCKED_MARKERS = ["blocked", "Blocked", "블로커", "차단", "진행 불가"]
 const REVIEW_MARKERS = ["리뷰 필요", "finding", "Findings", "이슈", "risk", "Risk"]
+const COMPLETION_MARKERS = ["완료했습니다", "완료됐습니다", "완료되었습니다", "push 완료", "푸시 완료", "커밋하고 push 완료", "작업 완료"]
 
 const recent = new Map()
 
@@ -48,6 +49,16 @@ function subtitleFor(input, label) {
 
 function commandSummary(input) {
   return input?.command || input?.args?.command || input?.metadata?.command || input?.pattern || "명령 실행 승인이 필요합니다"
+}
+
+function chatRole(input, output) {
+  return input?.role || output?.role || input?.message?.role || output?.message?.role || ""
+}
+
+function completionSubtitle(text, input) {
+  const sessionID = input?.sessionID ? ` · ${String(input.sessionID).slice(0, 8)}` : ""
+  if (text.includes("커밋") || text.includes("push") || text.includes("푸시")) return `커밋/푸시${sessionID}`
+  return `작업 결과${sessionID}`
 }
 
 export async function notifyOnEvent(_ctx, input) {
@@ -108,6 +119,26 @@ export async function notifyOnToolAfter(_ctx, input, output) {
     }
   } catch (err) {
     await logger.warn("notify.tool-after", err)
+  }
+}
+
+export async function notifyOnChatMessage(_ctx, input, output) {
+  try {
+    const role = chatRole(input, output)
+    if (role && role !== "assistant") return
+
+    const text = outputText(output)
+    if (!text || text.includes("Task 호출 템플릿:")) return
+
+    const sessionID = input?.sessionID || "unknown"
+    if (containsAny(text, COMPLETION_MARKERS) && once(`chat-completed:${sessionID}`, 30_000)) {
+      await notify("completed", compact(excerpt(text, COMPLETION_MARKERS)), {
+        subtitle: completionSubtitle(text, input),
+        detail: text,
+      })
+    }
+  } catch (err) {
+    await logger.warn("notify.chat-message", err)
   }
 }
 
