@@ -49,6 +49,16 @@ function loadPermissionGate(detectDestructive) {
   return Function("detectDestructive", `${source}\nreturn { permissionCommandCandidates, isBashPermission, findDestructivePermission, permissionGate }`)(detectDestructive)
 }
 
+function loadNotifyHook() {
+  const source = readFileSync("plugin/auto-delegate/hooks/notify.ts", "utf8")
+    .replace(/^\/\/ @ts-nocheck\n+/, "")
+    .replace('import { logger } from "../lib/logger.ts"\n', "const logger = { warn: async () => {}, info: async () => {} }\n")
+    .replace('import { compact, notify } from "../lib/notify.ts"\n', "const notifications = []\nconst compact = (value, fallback = '작업 상태를 확인해주세요') => String(value ?? '').replace(/\\s+/g, ' ').trim() || fallback\nconst notify = async (...args) => { notifications.push(args) }\n")
+    .replaceAll("export async function", "async function")
+
+  return Function(`${source}\nreturn { isGitPushCommand, isGitPushSuccessOutput, notifyOnTextComplete, notifications }`)()
+}
+
 test("detectDestructive catches high-risk commands", () => {
   const { detectDestructive } = loadPatterns()
   const cases = [
@@ -144,4 +154,23 @@ test("permissionGate ignores non-bash permission patterns", () => {
     patterns: ["rag/scripts/load_docs.py"],
     metadata: {},
   }), null)
+})
+
+test("notify hook detects successful git push tool output", () => {
+  const notifyHook = loadNotifyHook()
+
+  assert.equal(notifyHook.isGitPushCommand({ args: { command: "git push origin master" } }), true)
+  assert.equal(notifyHook.isGitPushCommand({ args: { command: "git status --short" } }), false)
+  assert.equal(notifyHook.isGitPushSuccessOutput("To github.com:owner/repo.git\n   e99edce..b6b081f  master -> master"), true)
+  assert.equal(notifyHook.isGitPushSuccessOutput("fatal: failed to push some refs"), false)
+})
+
+test("notify hook sends completion for any final text", async () => {
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnTextComplete(null, { sessionID: "s1", messageID: "m1", partID: "p1" }, { text: "짧은 답변입니다." })
+
+  assert.equal(notifyHook.notifications.length, 1)
+  assert.equal(notifyHook.notifications[0][0], "completed")
+  assert.equal(notifyHook.notifications[0][1], "짧은 답변입니다.")
 })

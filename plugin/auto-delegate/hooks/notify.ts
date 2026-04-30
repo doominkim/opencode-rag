@@ -7,6 +7,7 @@ const CHOICE_MARKERS = ["[interview]", "선택", "결정", "답해주시면", "�
 const BLOCKED_MARKERS = ["blocked", "Blocked", "블로커", "차단", "진행 불가"]
 const REVIEW_MARKERS = ["리뷰 필요", "finding", "Findings", "이슈", "risk", "Risk"]
 const COMPLETION_MARKERS = ["완료했습니다", "완료됐습니다", "완료되었습니다", "push 완료", "푸시 완료", "커밋하고 push 완료", "작업 완료"]
+const GIT_PUSH_SUCCESS_MARKERS = ["->", "Everything up-to-date"]
 
 const recent = new Map()
 
@@ -51,6 +52,15 @@ function commandSummary(input) {
   return input?.command || input?.args?.command || input?.metadata?.command || input?.pattern || "명령 실행 승인이 필요합니다"
 }
 
+function isGitPushCommand(input) {
+  const command = commandSummary(input)
+  return /(^|\s)git\s+push(\s|$)/.test(command)
+}
+
+function isGitPushSuccessOutput(text) {
+  return text.includes("To ") && containsAny(text, GIT_PUSH_SUCCESS_MARKERS)
+}
+
 function completionSubtitle(text, input) {
   const sessionID = input?.sessionID ? ` · ${String(input.sessionID).slice(0, 8)}` : ""
   if (text.includes("커밋") || text.includes("push") || text.includes("푸시")) return `커밋/푸시${sessionID}`
@@ -61,6 +71,8 @@ export async function notifyOnEvent(_ctx, input) {
   try {
     const event = input?.event
     if (!event?.type) return
+
+    await logger.info("notify.event.enter", { type: event.type, sessionID: event?.properties?.sessionID || event?.properties?.info?.sessionID })
 
     const sessionID = event?.properties?.sessionID || event?.properties?.info?.sessionID || "unknown"
 
@@ -78,6 +90,14 @@ export async function notifyOnEvent(_ctx, input) {
 export async function notifyOnToolAfter(_ctx, input, output) {
   try {
     const text = outputText(output)
+    await logger.info("notify.tool-after.enter", {
+      tool: input?.tool,
+      sessionID: input?.sessionID,
+      callID: input?.callID || input?.id,
+      args: input?.args,
+      outputKeys: Object.keys(output || {}),
+      outputPreview: String(text || "").slice(0, 240),
+    })
     if (!text) return
 
     const tool = input?.tool || "tool"
@@ -107,6 +127,14 @@ export async function notifyOnToolAfter(_ctx, input, output) {
       return
     }
 
+    if (isGitPushCommand(input) && isGitPushSuccessOutput(text) && once(`git-push:${callID}`)) {
+      await notify("completed", compact(excerpt(text, GIT_PUSH_SUCCESS_MARKERS), "git push 완료"), {
+        subtitle: subtitleFor(input, "커밋/푸시 완료"),
+        detail: text,
+      })
+      return
+    }
+
     if (containsAny(text, REVIEW_MARKERS) && once(`review:${callID}`)) {
       await notify("review_required", compact(excerpt(text, REVIEW_MARKERS)), {
         subtitle: subtitleFor(input, "리뷰 확인"),
@@ -121,11 +149,17 @@ export async function notifyOnToolAfter(_ctx, input, output) {
 export async function notifyOnTextComplete(_ctx, input, output) {
   try {
     const text = output?.text || outputText(output)
+    await logger.info("notify.text-complete.enter", {
+      sessionID: input?.sessionID,
+      messageID: input?.messageID,
+      partID: input?.partID,
+      textPreview: String(text || "").slice(0, 240),
+    })
     if (!text || text.includes("Task 호출 템플릿:")) return
 
     const sessionID = input?.sessionID || "unknown"
-    if (containsAny(text, COMPLETION_MARKERS) && once(`text-completed:${sessionID}:${input?.messageID || "unknown"}`, 30_000)) {
-      await notify("completed", compact(excerpt(text, COMPLETION_MARKERS)), {
+    if (once(`text-completed:${sessionID}:${input?.messageID || "unknown"}`, 30_000)) {
+      await notify("completed", compact(excerpt(text, COMPLETION_MARKERS), "응답이 완료됐습니다"), {
         subtitle: completionSubtitle(text, input),
         detail: text,
       })
@@ -137,6 +171,7 @@ export async function notifyOnTextComplete(_ctx, input, output) {
 
 export async function notifyOnPermissionAsk(_ctx, input, output) {
   try {
+    await logger.info("notify.permission.enter", { status: output?.status, inputKeys: Object.keys(input || {}) })
     if (output?.status !== "ask") return
     const key = input?.id || input?.callID || JSON.stringify(input || {}).slice(0, 80)
     if (!once(`permission:${key}`, 30_000)) return

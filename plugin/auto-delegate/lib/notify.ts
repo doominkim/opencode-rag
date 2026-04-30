@@ -9,9 +9,9 @@ const ENABLED = process.env.OPENCODE_NOTIFY !== "0"
 const DEFAULT_SOUND = "Glass"
 const ICON_PATH = join(dirname(fileURLToPath(import.meta.url)), "../assets/opencode.png")
 const DETAIL_PATH = "/Users/dominic/.config/opencode/logs/latest-notification.md"
-const TITLE_MAX = 10
-const SUBTITLE_MAX = 120
-const MESSAGE_MAX = 600
+const TITLE_MAX = 27
+const SUBTITLE_MAX = 29
+const MESSAGE_MAX = 85
 const NODE_NOTIFIER_TIMEOUT_MS = 2_000
 
 const KIND_CONFIG = {
@@ -90,7 +90,7 @@ export async function notify(kind, message, options = {}) {
   if (process.platform !== "darwin") return
 
   const config = KIND_CONFIG[kind] || { title: "OpenCode", sound: DEFAULT_SOUND }
-  const title = cleanNotificationText(options.title || config.title, TITLE_MAX)
+  const title = cleanNotificationText(options.title || `hook: ${config.title}`, TITLE_MAX)
   const subtitle = cleanNotificationText(options.subtitle || "", SUBTITLE_MAX)
   const body = cleanNotificationText(message)
   const sound = cleanNotificationText(options.sound || config.sound || DEFAULT_SOUND)
