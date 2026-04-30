@@ -2,14 +2,18 @@
 import { logger } from "../lib/logger.ts"
 import { compact, notify } from "../lib/notify.ts"
 
-const FAILURE_MARKERS = ["error", "Error", "failed", "Failed", "exception", "Exception"]
 const CHOICE_MARKERS = ["[interview]", "선택", "결정", "답해주시면", "확인해야", "불확실", "질문"]
 const BLOCKED_MARKERS = ["blocked", "Blocked", "블로커", "차단", "진행 불가"]
-const REVIEW_MARKERS = ["리뷰 필요", "finding", "Findings", "이슈", "risk", "Risk"]
 const COMPLETION_MARKERS = ["완료했습니다", "완료됐습니다", "완료되었습니다", "push 완료", "푸시 완료", "커밋하고 push 완료", "작업 완료"]
 const GIT_PUSH_SUCCESS_MARKERS = ["->", "Everything up-to-date"]
+const LOGGED_EVENT_TYPES = new Set(["session.updated", "session.error"])
 
 const recent = new Map()
+const sessionTitles = new Map()
+
+function getSessionID(input) {
+  return input?.sessionID || input?.sessionId || input?.event?.properties?.sessionID || input?.event?.properties?.sessionId || input?.event?.properties?.info?.sessionID || input?.event?.properties?.info?.sessionId || input?.event?.properties?.info?.id
+}
 
 function once(key, ttlMs = 8_000) {
   const now = Date.now()
@@ -48,7 +52,9 @@ function subtitleFor(input, label) {
 }
 
 function titleFor(input, label) {
-  const sessionID = input?.sessionID || input?.event?.properties?.sessionID || input?.event?.properties?.info?.sessionID
+  const sessionID = getSessionID(input)
+  const title = sessionID ? sessionTitles.get(sessionID) : ""
+  if (title) return `hook: ${title}`
   const session = sessionID ? `:${String(sessionID).slice(0, 8)}` : ""
   return `hook${session} ${label}`
 }
@@ -76,17 +82,18 @@ export async function notifyOnEvent(_ctx, input) {
     const event = input?.event
     if (!event?.type) return
 
-    await logger.info("notify.event.enter", { type: event.type, sessionID: event?.properties?.sessionID || event?.properties?.info?.sessionID })
-
-    const sessionID = event?.properties?.sessionID || event?.properties?.info?.sessionID || "unknown"
-
-    if (event.type === "session.idle" && once(`idle:${sessionID}`, 30_000)) {
-      await notify("completed", "작업 완료. 결과 확인", {
-        title: titleFor(input, "완료"),
-        subtitle: "작업 완료",
-        detail: `session.idle\nsessionID=${sessionID}`,
-      })
+    if (LOGGED_EVENT_TYPES.has(event.type)) {
+      await logger.info("notify.event.enter", { type: event.type, sessionID: getSessionID(input) })
     }
+
+    const sessionID = getSessionID(input) || "unknown"
+    const sessionTitle = event?.properties?.info?.title
+    if (event.type === "session.updated" && event?.properties?.info?.id && typeof sessionTitle === "string" && sessionTitle.trim()) {
+      sessionTitles.set(event.properties.info.id, sessionTitle.trim())
+    }
+
+    // session.idle can fire while the assistant is still working between tool calls.
+    // Do not notify here; final/user-action notifications come from narrower hooks.
   } catch (err) {
     await logger.warn("notify.event", err)
   }
@@ -97,7 +104,7 @@ export async function notifyOnToolAfter(_ctx, input, output) {
     const text = outputText(output)
     await logger.info("notify.tool-after.enter", {
       tool: input?.tool,
-      sessionID: input?.sessionID,
+      sessionID: getSessionID(input),
       callID: input?.callID || input?.id,
       args: input?.args,
       outputKeys: Object.keys(output || {}),
@@ -126,15 +133,6 @@ export async function notifyOnToolAfter(_ctx, input, output) {
       return
     }
 
-    if (containsAny(text, FAILURE_MARKERS) && once(`failed:${callID}`)) {
-      await notify("failed", compact(excerpt(text, FAILURE_MARKERS)), {
-        title: titleFor(input, "실패"),
-        subtitle: subtitleFor(input, "실패/오류"),
-        detail: text,
-      })
-      return
-    }
-
     if (isGitPushCommand(input) && isGitPushSuccessOutput(text) && once(`git-push:${callID}`)) {
       await notify("completed", compact(excerpt(text, GIT_PUSH_SUCCESS_MARKERS), "git push 완료"), {
         title: titleFor(input, "완료"),
@@ -142,14 +140,6 @@ export async function notifyOnToolAfter(_ctx, input, output) {
         detail: text,
       })
       return
-    }
-
-    if (containsAny(text, REVIEW_MARKERS) && once(`review:${callID}`)) {
-      await notify("review_required", compact(excerpt(text, REVIEW_MARKERS)), {
-        title: titleFor(input, "리뷰 필요"),
-        subtitle: subtitleFor(input, "리뷰 확인"),
-        detail: text,
-      })
     }
   } catch (err) {
     await logger.warn("notify.tool-after", err)
@@ -160,14 +150,14 @@ export async function notifyOnTextComplete(_ctx, input, output) {
   try {
     const text = output?.text || outputText(output)
     await logger.info("notify.text-complete.enter", {
-      sessionID: input?.sessionID,
+      sessionID: getSessionID(input),
       messageID: input?.messageID,
       partID: input?.partID,
       textPreview: String(text || "").slice(0, 240),
     })
     if (!text || text.includes("Task 호출 템플릿:")) return
 
-    const sessionID = input?.sessionID || "unknown"
+    const sessionID = getSessionID(input) || "unknown"
     if (once(`text-completed:${sessionID}:${input?.messageID || "unknown"}`, 30_000)) {
       await notify("completed", compact(excerpt(text, COMPLETION_MARKERS), "응답 완료"), {
         title: titleFor(input, "완료"),

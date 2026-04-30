@@ -9,6 +9,18 @@ const seenSessions = new Set()
 // OpenCode plugin hook은 agent 자체를 바꿀 수 없다 (chat.message output은 parts만 노출).
 // 따라서 이 hook은 "강한 위임 권고 텍스트 + Task 호출 템플릿"을 user message parts에 주입한다.
 // 모델이 수용해야 실제 위임이 일어나므로 아래 결정은 confidence 기반으로 어조를 조절한다.
+//
+// 주의: 새 part를 push하면 OpenCode SyncEvent가 sessionID/messageID/partID 부재로
+// 거부한다 (incidents/2026-04-30-chat-message-sessionid.md). 기존 첫 text part에
+// 텍스트를 append하는 방식만 사용한다.
+function appendToFirstTextPart(parts, addition) {
+  if (!Array.isArray(parts) || !addition) return false
+  const target = parts.find((p) => typeof p?.text === "string")
+  if (!target) return false
+  target.text = `${target.text}\n\n${addition}`
+  return true
+}
+
 export async function userPrompt(_ctx, input, output) {
   try {
     const parts = output?.parts
@@ -60,7 +72,7 @@ export async function userPrompt(_ctx, input, output) {
     lines.push("```")
     lines.push("사용자 override가 항상 우선합니다. 위임이 부적절하다고 판단되면 직접 처리하세요.")
 
-    parts.push({ type: "text", text: lines.join("\n") })
+    appendToFirstTextPart(parts, lines.join("\n"))
 
     await logger.info("router.match", {
       confidence: decision.confidence,
@@ -101,7 +113,7 @@ async function maybeInjectResume(parts, sessionID, currentAgent) {
       }
     }
     lines.push("이어서 작업하려면 위 컨텍스트를 활용하세요. 새 작업이면 무시해도 됩니다.")
-    parts.push({ type: "text", text: lines.join("\n") })
+    appendToFirstTextPart(parts, lines.join("\n"))
 
     await logger.info("user-prompt.resume-injected", {
       sessionID,

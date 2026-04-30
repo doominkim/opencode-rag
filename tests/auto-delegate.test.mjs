@@ -2,6 +2,18 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
 
+test("plugin does not register experimental text complete hook", () => {
+  const source = readFileSync("plugin/auto-delegate/index.ts", "utf8")
+  assert.equal(source.includes('"experimental.text.complete"'), false)
+})
+
+test("notify lib has terminal-notifier fallback with fallback title prefix", () => {
+  const source = readFileSync("plugin/auto-delegate/lib/notify.ts", "utf8")
+  assert.equal(source.includes("TERMINAL_NOTIFIER_PATH"), true)
+  assert.equal(source.includes("transport: \"terminal-notifier\""), true)
+  assert.equal(source.includes("`fallback: ${context || \"완료\"}`"), true)
+})
+
 function loadPatterns() {
   const source = readFileSync("plugin/auto-delegate/lib/patterns.ts", "utf8")
     .replace(/^\/\/ @ts-nocheck\n+/, "")
@@ -56,7 +68,7 @@ function loadNotifyHook() {
     .replace('import { compact, notify } from "../lib/notify.ts"\n', "const notifications = []\nconst compact = (value, fallback = '상태 확인') => String(value ?? '').replace(/\\s+/g, ' ').trim() || fallback\nconst notify = async (...args) => { notifications.push(args) }\n")
     .replaceAll("export async function", "async function")
 
-  return Function(`${source}\nreturn { isGitPushCommand, isGitPushSuccessOutput, notifyOnTextComplete, notifications }`)()
+  return Function(`${source}\nreturn { isGitPushCommand, isGitPushSuccessOutput, notifyOnEvent, notifyOnToolAfter, notifyOnTextComplete, notifications }`)()
 }
 
 test("detectDestructive catches high-risk commands", () => {
@@ -78,6 +90,38 @@ test("detectDestructive catches high-risk commands", () => {
   for (const [command, expected] of cases) {
     assert.equal(detectDestructive(command)?.name, expected, command)
   }
+})
+
+test("notify hook uses renamed session title when available", async () => {
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnEvent(null, {
+    event: {
+      type: "session.updated",
+      properties: {
+        info: {
+          id: "session-123456789",
+          title: "node notifier 5회 호출 테스트",
+        },
+      },
+    },
+  })
+  await notifyHook.notifyOnTextComplete(null, { sessionID: "session-123456789", messageID: "m1", partID: "p1" }, { text: "완료" })
+
+  assert.equal(notifyHook.notifications.length, 1)
+  assert.equal(notifyHook.notifications[0][2].title, "hook: node notifier 5회 호출 테스트")
+})
+
+test("notify hook does not alert on idle or ordinary tool failures", async () => {
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnEvent(null, {
+    sessionID: "session-123456789",
+    event: { type: "session.idle", properties: { sessionID: "session-123456789" } },
+  })
+  await notifyHook.notifyOnToolAfter(null, { tool: "bash", callID: "call-1", args: { command: "npm test" } }, { output: "Error: expected failure while debugging" })
+
+  assert.equal(notifyHook.notifications.length, 0)
 })
 
 test("detectDestructive leaves read-only commands alone", () => {
