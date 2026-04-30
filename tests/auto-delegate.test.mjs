@@ -53,7 +53,7 @@ function loadNotifyHook() {
   const source = readFileSync("plugin/auto-delegate/hooks/notify.ts", "utf8")
     .replace(/^\/\/ @ts-nocheck\n+/, "")
     .replace('import { logger } from "../lib/logger.ts"\n', "const logger = { warn: async () => {}, info: async () => {} }\n")
-    .replace('import { compact, notify } from "../lib/notify.ts"\n', "const notifications = []\nconst compact = (value, fallback = '작업 상태를 확인해주세요') => String(value ?? '').replace(/\\s+/g, ' ').trim() || fallback\nconst notify = async (...args) => { notifications.push(args) }\n")
+    .replace('import { compact, notify } from "../lib/notify.ts"\n', "const notifications = []\nconst compact = (value, fallback = '상태 확인') => String(value ?? '').replace(/\\s+/g, ' ').trim() || fallback\nconst notify = async (...args) => { notifications.push(args) }\n")
     .replaceAll("export async function", "async function")
 
   return Function(`${source}\nreturn { isGitPushCommand, isGitPushSuccessOutput, notifyOnTextComplete, notifications }`)()
@@ -173,4 +173,6 @@ test("notify hook sends completion for any final text", async () => {
   assert.equal(notifyHook.notifications.length, 1)
   assert.equal(notifyHook.notifications[0][0], "completed")
   assert.equal(notifyHook.notifications[0][1], "짧은 답변입니다.")
+  assert.equal(notifyHook.notifications[0][2].title, "hook:s1 완료")
+  assert.equal(notifyHook.notifications[0][2].subtitle, "작업 결과")
 })

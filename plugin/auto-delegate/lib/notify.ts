@@ -118,7 +118,7 @@ export async function notify(kind, message, options = {}) {
   }
 }
 
-export function compact(value, fallback = "작업 상태를 확인해주세요") {
+export function compact(value, fallback = "상태 확인") {
   const text = String(value ?? "").replace(/\s+/g, " ").trim()
   return text ? text.slice(0, MESSAGE_MAX) : fallback
 }

@@ -44,12 +44,17 @@ function excerpt(text, markers) {
 
 function subtitleFor(input, label) {
   const tool = input?.tool || "tool"
-  const sessionID = input?.sessionID ? ` · ${String(input.sessionID).slice(0, 8)}` : ""
-  return `${label} · ${tool}${sessionID}`
+  return `${label} · ${tool}`
+}
+
+function titleFor(input, label) {
+  const sessionID = input?.sessionID || input?.event?.properties?.sessionID || input?.event?.properties?.info?.sessionID
+  const session = sessionID ? `:${String(sessionID).slice(0, 8)}` : ""
+  return `hook${session} ${label}`
 }
 
 function commandSummary(input) {
-  return input?.command || input?.args?.command || input?.metadata?.command || input?.pattern || "명령 실행 승인이 필요합니다"
+  return input?.command || input?.args?.command || input?.metadata?.command || input?.pattern || "명령 승인 필요"
 }
 
 function isGitPushCommand(input) {
@@ -62,9 +67,8 @@ function isGitPushSuccessOutput(text) {
 }
 
 function completionSubtitle(text, input) {
-  const sessionID = input?.sessionID ? ` · ${String(input.sessionID).slice(0, 8)}` : ""
-  if (text.includes("커밋") || text.includes("push") || text.includes("푸시")) return `커밋/푸시${sessionID}`
-  return `작업 결과${sessionID}`
+  if (text.includes("커밋") || text.includes("push") || text.includes("푸시")) return "커밋/푸시"
+  return "작업 결과"
 }
 
 export async function notifyOnEvent(_ctx, input) {
@@ -77,8 +81,9 @@ export async function notifyOnEvent(_ctx, input) {
     const sessionID = event?.properties?.sessionID || event?.properties?.info?.sessionID || "unknown"
 
     if (event.type === "session.idle" && once(`idle:${sessionID}`, 30_000)) {
-      await notify("completed", "작업이 완료됐습니다. 결과를 확인해주세요.", {
-        subtitle: `작업 완료 · ${String(sessionID).slice(0, 8)}`,
+      await notify("completed", "작업 완료. 결과 확인", {
+        title: titleFor(input, "완료"),
+        subtitle: "작업 완료",
         detail: `session.idle\nsessionID=${sessionID}`,
       })
     }
@@ -105,6 +110,7 @@ export async function notifyOnToolAfter(_ctx, input, output) {
 
     if (containsAny(text, CHOICE_MARKERS) && once(`choice:${callID}`)) {
       await notify("choice_required", compact(excerpt(text, CHOICE_MARKERS)), {
+        title: titleFor(input, "선택 필요"),
         subtitle: subtitleFor(input, "사용자 결정 필요"),
         detail: text,
       })
@@ -113,6 +119,7 @@ export async function notifyOnToolAfter(_ctx, input, output) {
 
     if (containsAny(text, BLOCKED_MARKERS) && once(`blocked:${callID}`)) {
       await notify("blocked", compact(excerpt(text, BLOCKED_MARKERS)), {
+        title: titleFor(input, "진행 차단"),
         subtitle: subtitleFor(input, "진행 차단"),
         detail: text,
       })
@@ -121,6 +128,7 @@ export async function notifyOnToolAfter(_ctx, input, output) {
 
     if (containsAny(text, FAILURE_MARKERS) && once(`failed:${callID}`)) {
       await notify("failed", compact(excerpt(text, FAILURE_MARKERS)), {
+        title: titleFor(input, "실패"),
         subtitle: subtitleFor(input, "실패/오류"),
         detail: text,
       })
@@ -129,6 +137,7 @@ export async function notifyOnToolAfter(_ctx, input, output) {
 
     if (isGitPushCommand(input) && isGitPushSuccessOutput(text) && once(`git-push:${callID}`)) {
       await notify("completed", compact(excerpt(text, GIT_PUSH_SUCCESS_MARKERS), "git push 완료"), {
+        title: titleFor(input, "완료"),
         subtitle: subtitleFor(input, "커밋/푸시 완료"),
         detail: text,
       })
@@ -137,6 +146,7 @@ export async function notifyOnToolAfter(_ctx, input, output) {
 
     if (containsAny(text, REVIEW_MARKERS) && once(`review:${callID}`)) {
       await notify("review_required", compact(excerpt(text, REVIEW_MARKERS)), {
+        title: titleFor(input, "리뷰 필요"),
         subtitle: subtitleFor(input, "리뷰 확인"),
         detail: text,
       })
@@ -159,7 +169,8 @@ export async function notifyOnTextComplete(_ctx, input, output) {
 
     const sessionID = input?.sessionID || "unknown"
     if (once(`text-completed:${sessionID}:${input?.messageID || "unknown"}`, 30_000)) {
-      await notify("completed", compact(excerpt(text, COMPLETION_MARKERS), "응답이 완료됐습니다"), {
+      await notify("completed", compact(excerpt(text, COMPLETION_MARKERS), "응답 완료"), {
+        title: titleFor(input, "완료"),
         subtitle: completionSubtitle(text, input),
         detail: text,
       })
@@ -177,7 +188,8 @@ export async function notifyOnPermissionAsk(_ctx, input, output) {
     if (!once(`permission:${key}`, 30_000)) return
 
     await notify("approval_required", compact(commandSummary(input)), {
-      subtitle: "명령 실행 승인 필요",
+      title: titleFor(input, "승인 필요"),
+      subtitle: "명령 승인",
       detail: JSON.stringify(input || {}, null, 2),
     })
   } catch (err) {
