@@ -11,7 +11,7 @@ import { sessionCompacting } from "./hooks/session-compact.ts"
 import { permissionGate } from "./hooks/permission-gate.ts"
 import { commandPre } from "./hooks/command-pre.ts"
 import { toolDef } from "./hooks/tool-def.ts"
-import { notifyOnChatMessage, notifyOnEvent, notifyOnPermissionAsk, notifyOnToolAfter } from "./hooks/notify.ts"
+import { notifyOnEvent, notifyOnPermissionAsk, notifyOnTextComplete, notifyOnToolAfter } from "./hooks/notify.ts"
 import { trackAgent, trackTool, persistOnEvent } from "./hooks/state-persist.ts"
 
 export const AutoDelegate = async (ctx) => {
@@ -35,7 +35,6 @@ export const AutoDelegate = async (ctx) => {
       "chat.message": async (input, output) => {
         await trackAgent(ctx, input, output).catch((e) => logger.warn("hook.state-persist-agent", e))
         await userPrompt(ctx, input, output).catch((e) => logger.warn("hook.chat-message", e))
-        await notifyOnChatMessage(ctx, input, output).catch((e) => logger.warn("hook.notify-chat-message", e))
       },
       "chat.params": (input, output) =>
         chatParams(ctx, input, output).catch((e) => logger.warn("hook.chat-params", e)),
@@ -45,6 +44,8 @@ export const AutoDelegate = async (ctx) => {
         sessionCompacting(ctx, input, output).catch((e) => logger.warn("hook.session-compact", e)),
       "experimental.compaction.autocontinue": (input, output) =>
         autoContinue(ctx, input, output).catch((e) => logger.warn("hook.auto-continue", e)),
+      "experimental.text.complete": (input, output) =>
+        notifyOnTextComplete(ctx, input, output).catch((e) => logger.warn("hook.notify-text-complete", e)),
       "permission.ask": (input, output) =>
         Promise.all([
           permissionGate(ctx, input, output).catch((e) => logger.warn("hook.permission-ask", e)),

@@ -51,10 +51,6 @@ function commandSummary(input) {
   return input?.command || input?.args?.command || input?.metadata?.command || input?.pattern || "명령 실행 승인이 필요합니다"
 }
 
-function chatRole(input, output) {
-  return input?.role || output?.role || input?.message?.role || output?.message?.role || ""
-}
-
 function completionSubtitle(text, input) {
   const sessionID = input?.sessionID ? ` · ${String(input.sessionID).slice(0, 8)}` : ""
   if (text.includes("커밋") || text.includes("push") || text.includes("푸시")) return `커밋/푸시${sessionID}`
@@ -122,23 +118,20 @@ export async function notifyOnToolAfter(_ctx, input, output) {
   }
 }
 
-export async function notifyOnChatMessage(_ctx, input, output) {
+export async function notifyOnTextComplete(_ctx, input, output) {
   try {
-    const role = chatRole(input, output)
-    if (role && role !== "assistant") return
-
-    const text = outputText(output)
+    const text = output?.text || outputText(output)
     if (!text || text.includes("Task 호출 템플릿:")) return
 
     const sessionID = input?.sessionID || "unknown"
-    if (containsAny(text, COMPLETION_MARKERS) && once(`chat-completed:${sessionID}`, 30_000)) {
+    if (containsAny(text, COMPLETION_MARKERS) && once(`text-completed:${sessionID}:${input?.messageID || "unknown"}`, 30_000)) {
       await notify("completed", compact(excerpt(text, COMPLETION_MARKERS)), {
         subtitle: completionSubtitle(text, input),
         detail: text,
       })
     }
   } catch (err) {
-    await logger.warn("notify.chat-message", err)
+    await logger.warn("notify.text-complete", err)
   }
 }
 

@@ -10,10 +10,11 @@ The notification hook only watched `session.idle`, selected tool outputs, and pe
 
 ## What Was Added To Harness
 
-- Added `notifyOnChatMessage` to inspect assistant final message text.
+- Added `notifyOnTextComplete` to inspect assistant final message text through `experimental.text.complete`.
 - Completion notifications now trigger for explicit completion phrases such as `완료했습니다`, `푸시 완료`, and `커밋하고 push 완료`.
 - The completion title remains `완료`, the subtitle carries context such as `커밋/푸시`, and the body carries the actual final response excerpt.
 - User prompt injection text is ignored to avoid false positives from routing reminders.
+- A previous attempt used `chat.message`, but that hook is for new user messages and does not reliably see assistant final text.
 
 ## How To Verify
 
