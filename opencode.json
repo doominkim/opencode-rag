@@ -4,6 +4,11 @@
     "@rama_nigg/open-cursor@latest",
     "auto-delegate"
   ],
+  "agent": {
+    "AGENTS": {
+      "disable": true
+    }
+  },
   "provider": {},
   "mcp": {}
 }

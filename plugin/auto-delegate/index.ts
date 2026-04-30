@@ -11,6 +11,7 @@ import { sessionCompacting } from "./hooks/session-compact.ts"
 import { permissionGate } from "./hooks/permission-gate.ts"
 import { commandPre } from "./hooks/command-pre.ts"
 import { toolDef } from "./hooks/tool-def.ts"
+import { notifyOnEvent, notifyOnPermissionAsk, notifyOnToolAfter } from "./hooks/notify.ts"
 import { trackAgent, trackTool, persistOnEvent } from "./hooks/state-persist.ts"
 
 export const AutoDelegate = async (ctx) => {
@@ -21,6 +22,7 @@ export const AutoDelegate = async (ctx) => {
         Promise.all([
           eventTap(ctx, input).catch((e) => logger.warn("hook.event", e)),
           persistOnEvent(ctx, input).catch((e) => logger.warn("hook.state-persist-event", e)),
+          notifyOnEvent(ctx, input).catch((e) => logger.warn("hook.notify-event", e)),
         ]),
       "tool.execute.before": (input, output) =>
         toolPre(ctx, input, output).catch((e) => logger.warn("hook.tool-pre", e)),
@@ -28,6 +30,7 @@ export const AutoDelegate = async (ctx) => {
         Promise.all([
           errorRecover(ctx, input, output).catch((e) => logger.warn("hook.tool-after", e)),
           trackTool(ctx, input, output).catch((e) => logger.warn("hook.state-persist-tool", e)),
+          notifyOnToolAfter(ctx, input, output).catch((e) => logger.warn("hook.notify-tool-after", e)),
         ]),
       "chat.message": async (input, output) => {
         await trackAgent(ctx, input, output).catch((e) => logger.warn("hook.state-persist-agent", e))
@@ -42,7 +45,10 @@ export const AutoDelegate = async (ctx) => {
       "experimental.compaction.autocontinue": (input, output) =>
         autoContinue(ctx, input, output).catch((e) => logger.warn("hook.auto-continue", e)),
       "permission.ask": (input, output) =>
-        permissionGate(ctx, input, output).catch((e) => logger.warn("hook.permission-ask", e)),
+        Promise.all([
+          permissionGate(ctx, input, output).catch((e) => logger.warn("hook.permission-ask", e)),
+          notifyOnPermissionAsk(ctx, input, output).catch((e) => logger.warn("hook.notify-permission", e)),
+        ]),
       "command.execute.before": (input, output) =>
         commandPre(ctx, input, output).catch((e) => logger.warn("hook.command-pre", e)),
       "tool.definition": (input, output) =>

@@ -10,7 +10,8 @@
     "verify:rag": "python3 -m py_compile rag/scripts/*.py"
   },
   "dependencies": {
+    "@opencode-ai/plugin": "1.14.19",
     "auto-delegate": "file:plugin/auto-delegate",
-    "@opencode-ai/plugin": "1.14.19"
+    "node-notifier": "^10.0.1"
   }
 }
