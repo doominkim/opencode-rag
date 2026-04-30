@@ -2,14 +2,13 @@
 import { logger } from "../lib/logger.ts"
 import { compact, notify } from "../lib/notify.ts"
 
-const CHOICE_MARKERS = ["[interview]", "선택", "결정", "답해주시면", "확인해야", "불확실", "질문"]
-const BLOCKED_MARKERS = ["blocked", "Blocked", "블로커", "차단", "진행 불가"]
-const COMPLETION_MARKERS = ["완료했습니다", "완료됐습니다", "완료되었습니다", "push 완료", "푸시 완료", "커밋하고 push 완료", "작업 완료"]
-const GIT_PUSH_SUCCESS_MARKERS = ["->", "Everything up-to-date"]
 const LOGGED_EVENT_TYPES = new Set(["session.updated", "session.error"])
+const IDLE_NOTIFY_DELAY_MS = Number(process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS || 1_200)
 
 const recent = new Map()
 const sessionTitles = new Map()
+const sessionStatuses = new Map()
+const idleNotifyTimers = new Map()
 
 function getSessionID(input) {
   return input?.sessionID || input?.sessionId || input?.event?.properties?.sessionID || input?.event?.properties?.sessionId || input?.event?.properties?.info?.sessionID || input?.event?.properties?.info?.sessionId || input?.event?.properties?.info?.id
@@ -31,10 +30,6 @@ function outputText(output) {
   return candidates.find((value) => typeof value === "string" && value.trim()) || ""
 }
 
-function containsAny(text, markers) {
-  return markers.some((marker) => text.includes(marker))
-}
-
 function excerpt(text, markers) {
   const normalized = String(text ?? "").replace(/\r/g, "").trim()
   if (!normalized) return ""
@@ -46,35 +41,41 @@ function excerpt(text, markers) {
   return selected.replace(/\s+/g, " ").slice(0, 520)
 }
 
-function subtitleFor(input, label) {
-  const tool = input?.tool || "tool"
-  return `${label} · ${tool}`
-}
-
 function titleFor(input, label) {
   const sessionID = getSessionID(input)
   const title = sessionID ? sessionTitles.get(sessionID) : ""
-  if (title) return `hook: ${title}`
+  if (title) return title
   const session = sessionID ? `:${String(sessionID).slice(0, 8)}` : ""
-  return `hook${session} ${label}`
+  return session ? `${String(sessionID).slice(0, 8)} ${label}` : label
 }
 
 function commandSummary(input) {
   return input?.command || input?.args?.command || input?.metadata?.command || input?.pattern || "명령 승인 필요"
 }
 
-function isGitPushCommand(input) {
-  const command = commandSummary(input)
-  return /(^|\s)git\s+push(\s|$)/.test(command)
+function clearIdleNotify(sessionID) {
+  const timer = idleNotifyTimers.get(sessionID)
+  if (!timer) return
+  clearTimeout(timer)
+  idleNotifyTimers.delete(sessionID)
 }
 
-function isGitPushSuccessOutput(text) {
-  return text.includes("To ") && containsAny(text, GIT_PUSH_SUCCESS_MARKERS)
-}
+function scheduleIdleNotify(input, sessionID) {
+  clearIdleNotify(sessionID)
+  idleNotifyTimers.set(sessionID, setTimeout(async () => {
+    idleNotifyTimers.delete(sessionID)
+    if (sessionStatuses.get(sessionID) !== "idle") return
 
-function completionSubtitle(text, input) {
-  if (text.includes("커밋") || text.includes("push") || text.includes("푸시")) return "커밋/푸시"
-  return "작업 결과"
+    try {
+      await notify("input_required", "입력할 차례", {
+        title: titleFor(input, "입력 대기"),
+        subtitle: "사용자 입력",
+        detail: `session.status idle\nsessionID=${sessionID}`,
+      })
+    } catch (err) {
+      await logger.warn("notify.idle", err)
+    }
+  }, IDLE_NOTIFY_DELAY_MS))
 }
 
 export async function notifyOnEvent(_ctx, input) {
@@ -90,6 +91,24 @@ export async function notifyOnEvent(_ctx, input) {
     const sessionTitle = event?.properties?.info?.title
     if (event.type === "session.updated" && event?.properties?.info?.id && typeof sessionTitle === "string" && sessionTitle.trim()) {
       sessionTitles.set(event.properties.info.id, sessionTitle.trim())
+    }
+
+    if (event.type === "session.status") {
+      const sessionID = getSessionID(input)
+      const status = event?.properties?.status?.type
+      if (!sessionID || !status) return
+
+      const previous = sessionStatuses.get(sessionID)
+      sessionStatuses.set(sessionID, status)
+
+      if (status === "busy") {
+        clearIdleNotify(sessionID)
+        return
+      }
+
+      if (status === "idle" && previous === "busy") {
+        scheduleIdleNotify(input, sessionID)
+      }
     }
 
     // session.idle can fire while the assistant is still working between tool calls.
@@ -110,37 +129,8 @@ export async function notifyOnToolAfter(_ctx, input, output) {
       outputKeys: Object.keys(output || {}),
       outputPreview: String(text || "").slice(0, 240),
     })
-    if (!text) return
-
-    const tool = input?.tool || "tool"
-    const callID = input?.callID || input?.id || "unknown"
-
-    if (containsAny(text, CHOICE_MARKERS) && once(`choice:${callID}`)) {
-      await notify("choice_required", compact(excerpt(text, CHOICE_MARKERS)), {
-        title: titleFor(input, "선택 필요"),
-        subtitle: subtitleFor(input, "사용자 결정 필요"),
-        detail: text,
-      })
-      return
-    }
-
-    if (containsAny(text, BLOCKED_MARKERS) && once(`blocked:${callID}`)) {
-      await notify("blocked", compact(excerpt(text, BLOCKED_MARKERS)), {
-        title: titleFor(input, "진행 차단"),
-        subtitle: subtitleFor(input, "진행 차단"),
-        detail: text,
-      })
-      return
-    }
-
-    if (isGitPushCommand(input) && isGitPushSuccessOutput(text) && once(`git-push:${callID}`)) {
-      await notify("completed", compact(excerpt(text, GIT_PUSH_SUCCESS_MARKERS), "git push 완료"), {
-        title: titleFor(input, "완료"),
-        subtitle: subtitleFor(input, "커밋/푸시 완료"),
-        detail: text,
-      })
-      return
-    }
+    // Tool output is often an intermediate state. Do not notify from it;
+    // notify only when the runtime explicitly asks for user approval.
   } catch (err) {
     await logger.warn("notify.tool-after", err)
   }
@@ -155,16 +145,8 @@ export async function notifyOnTextComplete(_ctx, input, output) {
       partID: input?.partID,
       textPreview: String(text || "").slice(0, 240),
     })
-    if (!text || text.includes("Task 호출 템플릿:")) return
-
-    const sessionID = getSessionID(input) || "unknown"
-    if (once(`text-completed:${sessionID}:${input?.messageID || "unknown"}`, 30_000)) {
-      await notify("completed", compact(excerpt(text, COMPLETION_MARKERS), "응답 완료"), {
-        title: titleFor(input, "완료"),
-        subtitle: completionSubtitle(text, input),
-        detail: text,
-      })
-    }
+    // Final text completes on every assistant response; do not notify here.
+    // User-visible notifications are limited to explicit approval requests.
   } catch (err) {
     await logger.warn("notify.text-complete", err)
   }

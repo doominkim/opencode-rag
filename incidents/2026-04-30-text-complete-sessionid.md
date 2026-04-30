@@ -4,7 +4,7 @@
 OpenCode reported `SyncEvent.run: "sessionID" required but not found` during assistant output and subagent/tool flows.
 
 ## Why
-The local plugin registered `experimental.text.complete`. In the current runtime path, that hook can be invoked with a payload shaped like `{ part: ... }` instead of the SDK type shape containing `sessionID`, `messageID`, and `partID`. OpenCode validates the sync event before plugin fallback logic can recover, so optional chaining inside `notifyOnTextComplete` is not enough.
+The local plugin registered `experimental.text.complete`. In the current runtime path, that hook can be invoked with a payload shaped like `{ part: ... }` instead of the SDK type shape containing `sessionID`, `messageID`, and `partID`. OpenCode validates the sync event before plugin recovery logic can run, so optional chaining inside `notifyOnTextComplete` is not enough.
 
 ## What Was Added To Harness
 The plugin no longer registers `experimental.text.complete`. Completion notifications remain covered by the existing `event` hook via `session.idle`, and tool/permission notification hooks remain registered.

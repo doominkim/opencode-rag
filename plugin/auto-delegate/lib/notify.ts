@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { mkdir, writeFile } from "node:fs/promises"
-import { execFile } from "node:child_process"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import notifier from "node-notifier"
@@ -10,7 +9,6 @@ const ENABLED = process.env.OPENCODE_NOTIFY !== "0"
 const DEFAULT_SOUND = "Glass"
 const ICON_PATH = join(dirname(fileURLToPath(import.meta.url)), "../assets/opencode.png")
 const DETAIL_PATH = "/Users/dominic/.config/opencode/logs/latest-notification.md"
-const TERMINAL_NOTIFIER_PATH = join(dirname(fileURLToPath(import.meta.url)), "../../../node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier")
 const TITLE_MAX = 27
 const SUBTITLE_MAX = 29
 const MESSAGE_MAX = 85
@@ -18,6 +16,7 @@ const NODE_NOTIFIER_TIMEOUT_MS = 2_000
 
 const KIND_CONFIG = {
   completed: { title: "완료", sound: "Glass" },
+  input_required: { title: "입력 대기", sound: "Glass" },
   failed: { title: "실패", sound: "Basso" },
   choice_required: { title: "선택 필요", sound: "Glass" },
   approval_required: { title: "승인 필요", sound: "Basso" },
@@ -87,35 +86,12 @@ async function notifyWithNodeNotifier({ title, subtitle, message, sound, open })
   })
 }
 
-function fallbackTitle(title) {
-  const context = String(title ?? "").replace(/^hook:\s?/, "").trim()
-  return cleanNotificationText(`fallback: ${context || "완료"}`, TITLE_MAX)
-}
-
-async function notifyWithTerminalNotifier({ title, subtitle, message, sound, open }) {
-  const args = [
-    "-title", fallbackTitle(title),
-    "-message", message,
-    "-sound", sound,
-  ]
-
-  if (subtitle) args.push("-subtitle", subtitle)
-  if (open) args.push("-open", open)
-
-  await new Promise((resolve, reject) => {
-    const child = execFile(TERMINAL_NOTIFIER_PATH, args, { timeout: NODE_NOTIFIER_TIMEOUT_MS }, (err) => {
-      err ? reject(err) : resolve(undefined)
-    })
-    child.on("error", reject)
-  })
-}
-
 export async function notify(kind, message, options = {}) {
   if (!ENABLED) return
   if (process.platform !== "darwin") return
 
   const config = KIND_CONFIG[kind] || { title: "OpenCode", sound: DEFAULT_SOUND }
-  const title = cleanNotificationText(options.title || `hook: ${config.title}`, TITLE_MAX)
+  const title = cleanNotificationText(options.title || config.title, TITLE_MAX)
   const subtitle = cleanNotificationText(options.subtitle || "", SUBTITLE_MAX)
   const body = cleanNotificationText(message)
   const sound = cleanNotificationText(options.sound || config.sound || DEFAULT_SOUND)
@@ -140,17 +116,10 @@ export async function notify(kind, message, options = {}) {
     await logger.info("notify.sent", { kind, title, subtitle, message: body, open, transport: "node-notifier" })
   } catch (err) {
     await logger.warn("notify.failed", err)
-    try {
-      const fallback = fallbackTitle(title)
-      await notifyWithTerminalNotifier({ title, subtitle, message: body, sound, open })
-      await logger.info("notify.sent", { kind, title: fallback, subtitle, message: body, open, transport: "terminal-notifier" })
-    } catch (fallbackErr) {
-      await logger.warn("notify.fallback.failed", fallbackErr)
-    }
   }
 }
 
-export function compact(value, fallback = "상태 확인") {
+export function compact(value, defaultValue = "상태 확인") {
   const text = String(value ?? "").replace(/\s+/g, " ").trim()
-  return text ? text.slice(0, MESSAGE_MAX) : fallback
+  return text ? text.slice(0, MESSAGE_MAX) : defaultValue
 }

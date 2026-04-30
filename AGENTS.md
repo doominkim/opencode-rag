@@ -6,7 +6,7 @@
 - 항상 한국어로 답변한다. 사용자가 명시적으로 다른 언어를 요청한 경우에만 변경한다.
 - 코드, 로그, 에러, 명령어, API 스키마, 고유명사는 원문을 유지하고 설명만 한국어로 한다.
 - 커밋 메시지는 사용자가 명시적으로 다른 언어를 요청하지 않는 한 항상 한글로 작성한다.
-- 최종 응답 직전에는 OpenCode hook 알림과 별개로 macOS 알림을 직접 보낸다. `./node_modules/node-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier`를 사용한다. 알림 copy는 기존 hook 정책과 동일하게 `title=출처+상태`, `subtitle=맥락`, `message/body=실제 내용`으로 작성한다. 알림 copy는 존댓말/경어체 없이 최대한 짧게 쓴다. fallback 직접 호출의 `-title`은 OpenCode rename 세션명이 보여도 반드시 `fallback:` prefix를 붙인다. 예: 현재 세션명이 `node notifier 5회 호출 테스트`면 title은 27자 제한 안에서 `fallback: node notifier 5회 호출 테스트`처럼 쓰고, rename 세션명이 보이지 않으면 작업명을 추론하지 말고 `fallback: 완료`, `fallback: 실패`, `fallback: 선택 필요`, `fallback: 승인 필요`, `fallback: 진행 차단`, `fallback: 리뷰 필요`처럼 상태만 쓴다. hook 알림은 코드에서 `hook:<session8> 완료` 또는 `hook: <rename 세션명>`처럼 반드시 `hook` 출처를 남긴다. `-subtitle`은 `작업 결과`, `커밋/푸시`, `검증`, `사용자 결정 필요` 같은 맥락을 넣고, `-message`는 이번 응답의 핵심 결과 또는 사용자가 취해야 할 일을 한 문장으로 작성한다. 성공/완료는 `-sound Glass`, 실패/차단/승인 필요는 `-sound Basso`를 사용한다. 명령 실패는 최종 응답을 막지 않는다.
+- macOS 알림은 OpenCode hook 경로만 사용한다. assistant가 최종 응답 직전에 직접 알림 명령을 호출하지 않는다. hook 알림 title에는 사용자에게 필요한 세션명 또는 상태만 표시하고 `hook:` prefix를 붙이지 않는다.
 - subagent 또는 RAG 사용 시 응답 끝에 아래 포맷으로 요약을 추가한다:
   - `[subagent: <name>]`
   - `[rag: <namespace>, query="<query>"]`
@@ -20,6 +20,21 @@
 - `grep`을 직접 사용할 때 alternation(`|`), group, escaped parenthesis가 들어간 패턴이면 반드시 `grep -E` 또는 `rg`를 사용한다.
 - 기본 `grep`(BRE)에서 literal `(`는 `(`로 쓰고, `\(`는 그룹 시작으로 해석되어 `parentheses not balanced`를 만들 수 있다.
 - 검색 명령이 regex 오류로 실패하면 결과 없음으로 판단하지 말고, `rg` 또는 올바른 `grep -E` 패턴으로 재실행한 뒤 판단한다.
+
+---
+
+## Permission Source Of Truth
+- 모든 agent는 `bash`, `shell`, git 명령, 파일 삭제/이동, RAG sync/ingest/bootstrap, DB/외부 시스템 변경을 실행하기 전에 `PERMISSIONS.md`를 확인한다.
+- 권한 판단의 canonical rule table은 전역 OpenCode 설정의 `/Users/dominic/.config/opencode/plugin/auto-delegate/lib/permissions.ts`에 있는 `PERMISSION_RULES`다. `PERMISSIONS.md`는 agent와 hook이 같은 rule table을 따르도록 연결하는 안내 문서다.
+- 이 문서의 다른 섹션과 충돌하면 `PERMISSION_RULES`가 우선한다.
+- `requires_user_approval: true` 규칙은 정확한 명령, 영향 범위, 데이터/사용자 작업 손실 가능성을 사용자에게 먼저 제시하고 명시 승인을 받은 뒤에만 실행한다.
+- 실제 bash 권한 게이트는 `PERMISSION_RULES`에서 파생된 `/Users/dominic/.config/opencode/plugin/auto-delegate/lib/patterns.ts`와 `/Users/dominic/.config/opencode/plugin/auto-delegate/hooks/permission-gate.ts`가 담당한다. 정책을 바꿀 때는 `PERMISSION_RULES`를 먼저 수정한다.
+
+---
+
+## Git Safety
+- git 권한은 `PERMISSIONS.md`의 `git-*` rules를 따른다.
+- 요약: read-only git 조회만 승인 없이 허용하고, `git mv`, `git add`, `git restore`, `git reset`, `git checkout`, `git switch`, `git worktree add/remove`, `git push`, `git pull`, `git fetch` 등 worktree/index/ref/remote를 바꿀 수 있는 명령은 명시 승인 전 금지한다.
 
 ---
 
@@ -60,8 +75,7 @@
 - DB 스키마, 테이블, 인덱스, 마이그레이션 설계:
   - `db-designer`
 - 일반 조사, 단순 보조 작업, 명확히 분류되지 않는 작업:
-  - `general-purpose` (fallback agent가 등록된 경우) 또는 직접 처리
-  - 단, 구체 specialist가 맞으면 `general-purpose`를 쓰지 말고 specialist를 우선한다.
+  - 직접 처리하거나 상황에 맞는 specialist를 선택한다.
 
 - subagent 선택이 애매하면 직접 처리한다.
 - subagent 호출 실패 시 재시도 루프를 만들지 않고 직접 처리한다.
@@ -88,7 +102,7 @@
 | UI/UX 구현 | `frontend` | `deep-think` |
 | 보안/인증/인가 검토 | `security` | `research` |
 | 커밋 메시지 작성 | `commit-message` | `quick` |
-| 명확히 분류되지 않는 조사 | `general-purpose` fallback 또는 직접 처리 | `research` |
+| 명확히 분류되지 않는 조사 | 직접 처리 또는 상황별 specialist | `research` |
 
 ## Plan Resume Convention
 
@@ -126,7 +140,7 @@
 - `orchestrate`: 의도 분류 → 위임 → 검증 흐름이 필요한 작업. `theseus` (`/work` 진입).
 - `plan`: 큰 작업을 마일스톤으로 분해. `prometheus` 작성 → `metis` 실행.
 - `quick`: 단순, 저위험, 되돌리기 쉬운 작업. 직접 처리한다.
-- `research`: 넓은 코드 탐색, 외부 repo 분석, 문서 비교. `explore` / `oracle` / `librarian`. fallback이 필요하면 `general-purpose`.
+- `research`: 넓은 코드 탐색, 외부 repo 분석, 문서 비교. `explore` / `oracle` / `librarian`.
 - `architecture`: 구조 변경, 경계 판단, 책임 배치. `architect`를 사용한다.
 - `api`: REST/GraphQL/RPC 계약·핸들러·미들웨어. `api`를 사용한다.
 - `backend`: service, cron, batch, worker, scheduler, queue, domain/business logic 구현. `backend`를 사용한다.
@@ -168,14 +182,12 @@
 ---
 
 ## Forbidden Actions
-- 사용자 승인 없이 commit, push, deploy 하지 않는다.
-- 사용자 승인 없이 destructive sync, bootstrap, migration을 실행하지 않는다.
-- `.env`, secret, token, private key를 출력하지 않는다.
-- 대량 파일 생성, 삭제, 이동은 사전 설명 없이 하지 않는다.
-- 부분 샘플 파일로 ingest/sync를 실행하지 않는다.
+- 금지/승인 필요 작업은 `PERMISSIONS.md`를 따른다.
+- 요약: 사용자 승인 없이 commit, push, deploy, destructive sync/bootstrap/migration, 대량 파일 생성/삭제/이동, git mutate 명령을 실행하지 않는다.
+- `.env`, secret, token, private key는 승인 여부와 무관하게 출력하지 않는다.
 - verifier를 포함한 모든 검증 작업은 비파괴 명령만 실행한다.
 
-> destructive bash 명령은 `plugin/auto-delegate`의 `permission.ask` hook이 강제로 사용자 승인 게이트를 건다 (`hooks/permission-gate.ts`). 패턴은 `lib/patterns.ts` 참고.
+> destructive bash 명령은 `plugin/auto-delegate`의 `permission.ask` hook이 강제로 사용자 승인 게이트를 건다 (`hooks/permission-gate.ts`). 정책 원본은 `PERMISSIONS.md`, 실행 패턴은 `lib/patterns.ts` 참고.
 
 ---
 

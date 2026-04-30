@@ -92,10 +92,4 @@ export const AGENTS = [
     ],
     reason: "커밋 메시지 작성",
   },
-  {
-    name: "general-purpose",
-    category: "preset_research",
-    triggers: [/\b(general-purpose|범용|일반\s*보조|명확히\s*분류되지|fallback)\b/i],
-    reason: "범용 fallback/일반 보조 요청",
-  },
 ]

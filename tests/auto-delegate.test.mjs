@@ -2,25 +2,56 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { test } from "node:test"
 
-test("plugin does not register experimental text complete hook", () => {
+test("plugin does not register noisy text complete notifications", () => {
   const source = readFileSync("plugin/auto-delegate/index.ts", "utf8")
   assert.equal(source.includes('"experimental.text.complete"'), false)
+  assert.equal(source.includes("notifyOnTextComplete"), false)
 })
 
-test("notify lib has terminal-notifier fallback with fallback title prefix", () => {
+test("permission policy is the documented source of truth", () => {
+  const agents = readFileSync("AGENTS.md", "utf8")
+  const permissions = readFileSync("PERMISSIONS.md", "utf8")
+  const rules = readFileSync("plugin/auto-delegate/lib/permissions.ts", "utf8")
+
+  assert.equal(agents.includes("PERMISSIONS.md"), true)
+  assert.equal(agents.includes("PERMISSION_RULES"), true)
+  assert.equal(permissions.includes("/Users/dominic/.config/opencode/plugin/auto-delegate/lib/permissions.ts"), true)
+  assert.equal(permissions.includes("must not duplicate the full rule table"), true)
+  assert.equal(rules.includes("export const PERMISSION_RULES"), true)
+  assert.equal(rules.includes('id: "git-mv"'), true)
+  assert.equal(rules.includes('action: "ask"'), true)
+  assert.equal(rules.includes("requiresUserApproval"), false)
+  assert.equal(rules.includes("approvalLevel"), false)
+  assert.equal(rules.includes("enforcement"), false)
+  assert.equal(rules.includes("allow: true"), false)
+  assert.equal(rules.includes("allow: false"), false)
+})
+
+test("router does not include general-purpose agent", () => {
+  const agents = loadAgents()
+  assert.equal(agents.some((agent) => agent.name === "general-purpose"), false)
+})
+
+test("notify lib uses hook notification path only", () => {
   const source = readFileSync("plugin/auto-delegate/lib/notify.ts", "utf8")
-  assert.equal(source.includes("TERMINAL_NOTIFIER_PATH"), true)
-  assert.equal(source.includes("transport: \"terminal-notifier\""), true)
-  assert.equal(source.includes("`fallback: ${context || \"완료\"}`"), true)
+  assert.equal(source.includes("TERMINAL_NOTIFIER_PATH"), false)
+  assert.equal(source.includes("transport: \"terminal-notifier\""), false)
 })
 
 function loadPatterns() {
+  const permissionsSource = readFileSync("plugin/auto-delegate/lib/permissions.ts", "utf8")
+    .replace(/^\/\/ @ts-nocheck\n+/, "")
+    .replace("export const PERMISSION_RULES =", "const PERMISSION_RULES =")
+
+  const { PERMISSION_RULES } = Function(`${permissionsSource}\nreturn { PERMISSION_RULES }`)()
+
   const source = readFileSync("plugin/auto-delegate/lib/patterns.ts", "utf8")
     .replace(/^\/\/ @ts-nocheck\n+/, "")
+    .replace('import { PERMISSION_RULES } from "./permissions.ts"\n', "")
     .replace("export const DESTRUCTIVE_PATTERNS =", "const DESTRUCTIVE_PATTERNS =")
     .replace("export function detectDestructive", "function detectDestructive")
 
-  return Function(`${source}\nreturn { DESTRUCTIVE_PATTERNS, detectDestructive }`)()
+  return Function("PERMISSION_RULES", `${source}\nreturn { DESTRUCTIVE_PATTERNS, detectDestructive }`)(PERMISSION_RULES)
 }
 
 function loadAgents() {
@@ -65,10 +96,10 @@ function loadNotifyHook() {
   const source = readFileSync("plugin/auto-delegate/hooks/notify.ts", "utf8")
     .replace(/^\/\/ @ts-nocheck\n+/, "")
     .replace('import { logger } from "../lib/logger.ts"\n', "const logger = { warn: async () => {}, info: async () => {} }\n")
-    .replace('import { compact, notify } from "../lib/notify.ts"\n', "const notifications = []\nconst compact = (value, fallback = '상태 확인') => String(value ?? '').replace(/\\s+/g, ' ').trim() || fallback\nconst notify = async (...args) => { notifications.push(args) }\n")
+    .replace('import { compact, notify } from "../lib/notify.ts"\n', "const notifications = []\nconst compact = (value, defaultValue = '상태 확인') => String(value ?? '').replace(/\\s+/g, ' ').trim() || defaultValue\nconst notify = async (...args) => { notifications.push(args) }\n")
     .replaceAll("export async function", "async function")
 
-  return Function(`${source}\nreturn { isGitPushCommand, isGitPushSuccessOutput, notifyOnEvent, notifyOnToolAfter, notifyOnTextComplete, notifications }`)()
+  return Function(`${source}\nreturn { notifyOnEvent, notifyOnToolAfter, notifyOnTextComplete, notifyOnPermissionAsk, notifications }`)()
 }
 
 test("detectDestructive catches high-risk commands", () => {
@@ -76,9 +107,21 @@ test("detectDestructive catches high-risk commands", () => {
   const cases = [
     ["rm -rf /tmp/opencode-test", "rm-rf"],
     ["git push --force origin master", "git-push-force"],
+    ["git push origin master", "git-push"],
+    ["git pull --rebase", "git-pull"],
+    ["git fetch origin", "git-fetch"],
+    ["git add AGENTS.md", "git-add"],
+    ["git mv old.ts new.ts", "git-mv"],
+    ["git rm old.ts", "git-rm"],
+    ["git commit -m test", "git-commit"],
+    ["git worktree remove --force ../tmp", "git-worktree-mutate"],
     ["git reset --hard HEAD", "git-reset-hard"],
+    ["git reset HEAD~1", "git-reset"],
+    ["git branch -d feature/test", "git-branch-delete"],
     ["git checkout -f main", "git-checkout-force"],
+    ["git checkout main", "git-checkout"],
     ["git switch --force main", "git-switch-force"],
+    ["git switch main", "git-switch"],
     ["git restore .", "git-restore"],
     ["find . -name '*.tmp' -delete", "find-delete"],
     ["psql -c \"DELETE FROM users\"", "delete-from"],
@@ -106,10 +149,10 @@ test("notify hook uses renamed session title when available", async () => {
       },
     },
   })
-  await notifyHook.notifyOnTextComplete(null, { sessionID: "session-123456789", messageID: "m1", partID: "p1" }, { text: "완료" })
+  await notifyHook.notifyOnPermissionAsk(null, { sessionID: "session-123456789", id: "perm-1", pattern: "git reset --hard HEAD" }, { status: "ask" })
 
   assert.equal(notifyHook.notifications.length, 1)
-  assert.equal(notifyHook.notifications[0][2].title, "hook: node notifier 5회 호출 테스트")
+  assert.equal(notifyHook.notifications[0][2].title, "node notifier 5회 호출 테스트")
 })
 
 test("notify hook does not alert on idle or ordinary tool failures", async () => {
@@ -122,6 +165,75 @@ test("notify hook does not alert on idle or ordinary tool failures", async () =>
   await notifyHook.notifyOnToolAfter(null, { tool: "bash", callID: "call-1", args: { command: "npm test" } }, { output: "Error: expected failure while debugging" })
 
   assert.equal(notifyHook.notifications.length, 0)
+})
+
+test("notify hook alerts when session status stays idle", async () => {
+  const previousDelay = process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS
+  process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS = "1"
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnEvent(null, {
+    sessionID: "session-123456789",
+    event: { type: "session.status", properties: { sessionID: "session-123456789", status: { type: "busy" } } },
+  })
+  await notifyHook.notifyOnEvent(null, {
+    sessionID: "session-123456789",
+    event: { type: "session.status", properties: { sessionID: "session-123456789", status: { type: "idle" } } },
+  })
+  await new Promise((resolve) => setTimeout(resolve, 10))
+
+  if (previousDelay === undefined) delete process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS
+  else process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS = previousDelay
+
+  assert.equal(notifyHook.notifications.length, 1)
+  assert.equal(notifyHook.notifications[0][0], "input_required")
+  assert.equal(notifyHook.notifications[0][1], "입력할 차례")
+  assert.equal(notifyHook.notifications[0][2].subtitle, "사용자 입력")
+})
+
+test("notify hook cancels idle alert when session becomes busy again", async () => {
+  const previousDelay = process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS
+  process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS = "20"
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnEvent(null, {
+    sessionID: "session-123456789",
+    event: { type: "session.status", properties: { sessionID: "session-123456789", status: { type: "busy" } } },
+  })
+  await notifyHook.notifyOnEvent(null, {
+    sessionID: "session-123456789",
+    event: { type: "session.status", properties: { sessionID: "session-123456789", status: { type: "idle" } } },
+  })
+  await notifyHook.notifyOnEvent(null, {
+    sessionID: "session-123456789",
+    event: { type: "session.status", properties: { sessionID: "session-123456789", status: { type: "busy" } } },
+  })
+  await new Promise((resolve) => setTimeout(resolve, 30))
+
+  if (previousDelay === undefined) delete process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS
+  else process.env.OPENCODE_IDLE_NOTIFY_DELAY_MS = previousDelay
+
+  assert.equal(notifyHook.notifications.length, 0)
+})
+
+test("notify hook does not alert from intermediate tool output", async () => {
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnToolAfter(null, { tool: "bash", callID: "call-1", args: { command: "npm test" } }, { output: "선택이 필요합니다" })
+  await notifyHook.notifyOnToolAfter(null, { tool: "bash", callID: "call-2", args: { command: "npm test" } }, { output: "blocked: 진행 불가" })
+  await notifyHook.notifyOnToolAfter(null, { tool: "bash", callID: "call-3", args: { command: "git push origin master" } }, { output: "To github.com:owner/repo.git\n   e99edce..b6b081f  master -> master" })
+
+  assert.equal(notifyHook.notifications.length, 0)
+})
+
+test("notify hook alerts only when permission asks for user approval", async () => {
+  const notifyHook = loadNotifyHook()
+
+  await notifyHook.notifyOnPermissionAsk(null, { id: "perm-1", pattern: "git reset --hard HEAD" }, { status: "ask" })
+
+  assert.equal(notifyHook.notifications.length, 1)
+  assert.equal(notifyHook.notifications[0][0], "approval_required")
+  assert.equal(notifyHook.notifications[0][2].subtitle, "명령 승인")
 })
 
 test("detectDestructive leaves read-only commands alone", () => {
@@ -200,23 +312,10 @@ test("permissionGate ignores non-bash permission patterns", () => {
   }), null)
 })
 
-test("notify hook detects successful git push tool output", () => {
-  const notifyHook = loadNotifyHook()
-
-  assert.equal(notifyHook.isGitPushCommand({ args: { command: "git push origin master" } }), true)
-  assert.equal(notifyHook.isGitPushCommand({ args: { command: "git status --short" } }), false)
-  assert.equal(notifyHook.isGitPushSuccessOutput("To github.com:owner/repo.git\n   e99edce..b6b081f  master -> master"), true)
-  assert.equal(notifyHook.isGitPushSuccessOutput("fatal: failed to push some refs"), false)
-})
-
-test("notify hook sends completion for any final text", async () => {
+test("notify hook does not alert on final text completion", async () => {
   const notifyHook = loadNotifyHook()
 
   await notifyHook.notifyOnTextComplete(null, { sessionID: "s1", messageID: "m1", partID: "p1" }, { text: "짧은 답변입니다." })
 
-  assert.equal(notifyHook.notifications.length, 1)
-  assert.equal(notifyHook.notifications[0][0], "completed")
-  assert.equal(notifyHook.notifications[0][1], "짧은 답변입니다.")
-  assert.equal(notifyHook.notifications[0][2].title, "hook:s1 완료")
-  assert.equal(notifyHook.notifications[0][2].subtitle, "작업 결과")
+  assert.equal(notifyHook.notifications.length, 0)
 })
