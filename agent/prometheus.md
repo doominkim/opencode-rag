@@ -1,6 +1,6 @@
 ---
 description: 큰 작업을 마일스톤 단위 plan으로 분해하고 .plans/<slug>.md에 저장하는 planner 전용 subagent
-model: openai/gpt-5.5
+model: openai/gpt-5.4
 mode: subagent
 
 tools:

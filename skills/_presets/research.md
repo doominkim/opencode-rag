@@ -3,7 +3,6 @@ name: research
 description: 코드/문서 탐색과 요약 중심의 중간 비용 프리셋.
 model: openai/gpt-5.4
 temperature: 0.3
-max_tokens: 4096
 ---
 
 # Research Preset

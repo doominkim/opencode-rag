@@ -4,7 +4,7 @@ description: >-
   verification through builds, tests, and other non-destructive validation
   commands. Prefer it when the main question is whether the current change
   passes the right checks, not how to modify the code.
-model: openai/gpt-5.5
+model: openai/gpt-5.4
 mode: subagent
 tools:
   bash: true

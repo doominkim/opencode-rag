@@ -1,13 +1,15 @@
 // @ts-nocheck
 
 // preset 이름 → 모델 파라미터.
-// model 자체는 chat.params hook에서 변경할 수 없으므로(SDK 제약) temperature와
-// maxOutputTokens만 override 한다. 모델 선택은 사용자가 직접 한다.
+// model 자체는 chat.params hook에서 변경할 수 없으므로(SDK 제약) temperature만
+// override 한다. token 상한은 provider 기본값에 맡긴다 — OpenAI Chat Completions가
+// `max_output_tokens`를 거부했던 incident(2026-05-04) 이후 제거되었다.
+// 모델 선택은 사용자가 직접 한다.
 export const PRESETS = {
-  "deep-think": { temperature: 0.4, maxOutputTokens: 16384 },
-  "research":   { temperature: 0.3, maxOutputTokens: 4096 },
-  "quick":      { temperature: 0.2, maxOutputTokens: 1024 },
-  "cheap-bulk": { temperature: 0.1, maxOutputTokens: 2048 },
+  "deep-think": { temperature: 0.4 },
+  "research":   { temperature: 0.3 },
+  "quick":      { temperature: 0.2 },
+  "cheap-bulk": { temperature: 0.1 },
 }
 
 // agent 이름 → preset.

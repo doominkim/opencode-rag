@@ -1,6 +1,6 @@
 ---
 description: 사용자 의도를 분류하고 specialist에 위임해 검증까지 끌고 가는 orchestrator. 직접 코드 수정 금지.
-model: openai/gpt-5.5
+model: openai/gpt-5.4
 mode: subagent
 
 tools:

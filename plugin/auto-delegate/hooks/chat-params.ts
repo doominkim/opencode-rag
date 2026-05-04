@@ -13,14 +13,10 @@ export async function chatParams(_ctx, input, output) {
 
     const before = {
       temperature: output.temperature,
-      maxOutputTokens: output.maxOutputTokens,
     }
 
     if (typeof preset.temperature === "number") {
       output.temperature = preset.temperature
-    }
-    if (typeof preset.maxOutputTokens === "number") {
-      output.maxOutputTokens = preset.maxOutputTokens
     }
 
     await logger.info("chat-params.preset-applied", {
@@ -30,7 +26,6 @@ export async function chatParams(_ctx, input, output) {
       before,
       after: {
         temperature: output.temperature,
-        maxOutputTokens: output.maxOutputTokens,
       },
     })
   } catch (err) {

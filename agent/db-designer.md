@@ -1,6 +1,6 @@
 ---
 description: 스키마 설계, 엔티티 모델링, 관계 검토, 인덱스 설계, 쿼리 구조, 마이그레이션 리스크를 검토하는 DB 설계 전용 subagent
-model: openai/gpt-5.5
+model: openai/gpt-5.4
 mode: subagent
 
 tools:

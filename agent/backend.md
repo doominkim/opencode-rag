@@ -1,6 +1,6 @@
 ---
 description: 서비스, cron, batch, worker, scheduler, queue, 도메인/비즈니스 로직을 구현하는 backend subagent
-model: openai/gpt-5.5
+model: openai/gpt-5.4
 mode: subagent
 
 tools:

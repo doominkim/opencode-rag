@@ -1,6 +1,6 @@
 ---
 description: UI/UX, 컴포넌트, 스타일링, 접근성, 반응형 구현을 담당하는 도메인 subagent
-model: openai/gpt-5.5
+model: openai/gpt-5.4
 mode: subagent
 
 tools:
