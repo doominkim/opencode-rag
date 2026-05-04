@@ -1,6 +1,6 @@
 ---
 description: 코드 베이스, 외부 repo, 문서를 read-only로 탐색하고 구조 단서를 수집하는 subagent
-model: openai/gpt-5.4-mini
+model: openai/gpt-5.4-mini-fast
 mode: subagent
 
 tools:

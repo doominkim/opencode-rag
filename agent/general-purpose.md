@@ -1,6 +1,6 @@
 ---
 description: 명확히 분류되지 않는 일반 조사와 보조 작업을 수행하는 범용 subagent. specialist가 있으면 specialist를 우선 사용.
-model: openai/gpt-5.4
+model: openai/gpt-5.5-fast
 mode: subagent
 
 tools:

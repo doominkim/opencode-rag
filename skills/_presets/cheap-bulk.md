@@ -1,7 +1,7 @@
 ---
 name: cheap-bulk
 description: 반복적·기계적 변환을 대량 처리할 때 쓰는 초저비용 프리셋.
-model: openai/gpt-5.4-nano
+model: openai/gpt-5.4-nano-fast
 temperature: 0.1
 ---
 

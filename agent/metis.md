@@ -1,6 +1,6 @@
 ---
 description: prometheus가 작성한 .plans/<slug>.md를 마일스톤 단위로 실행하는 executor subagent
-model: openai/gpt-5.4
+model: openai/gpt-5.4-fast
 mode: subagent
 
 tools:

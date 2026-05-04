@@ -1,11 +1,10 @@
 ---
 description: 현재 git status 기준으로 커밋 메시지를 생성합니다. (commit 자체는 사용자가 실행)
-agent: commit-message
 ---
 
 # /commit
 
-`commit-message` agent에게 위임해 현재 변경사항의 커밋 메시지를 생성한다.
+현재 변경사항의 커밋 메시지를 생성한다. 가능하면 `commit-message` agent에게 위임하되, agent model/provider 문제가 발생하면 primary agent가 같은 규칙으로 직접 작성한다.
 
 ## 진입 시 commit-message agent가 수행할 것
 

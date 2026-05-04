@@ -1,6 +1,6 @@
 ---
 description: 파일 위치, 명명 패턴, 디렉터리 컨벤션을 식별하는 subagent
-model: openai/gpt-5.4-mini
+model: openai/gpt-5.4-mini-fast
 mode: subagent
 
 tools:

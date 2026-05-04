@@ -1,7 +1,7 @@
 ---
 name: deep-think
 description: 큰 추론, 설계, 위험 검토용 고비용 프리셋.
-model: openai/gpt-5.4
+model: openai/gpt-5.5-fast
 temperature: 0.4
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: 실제 git status 기준으로 커밋 메시지를 생성하는 전용 subagent. 도메인 무관 모든 변경에 사용.
-model: openai/gpt-5.3-codex-spark
+model: openai/gpt-5.4-mini-fast
 mode: subagent
 
 tools:

@@ -1,6 +1,6 @@
 ---
 description: REST/GraphQL/RPC API의 계약, 핸들러, 미들웨어, 에러 모델을 설계·구현하는 도메인 subagent
-model: openai/gpt-5.4
+model: openai/gpt-5.4-fast
 mode: subagent
 
 tools:

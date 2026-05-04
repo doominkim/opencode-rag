@@ -1,6 +1,6 @@
 ---
 description: 코드 베이스 관련 질문에 RAG와 코드 양쪽을 근거로 답하는 Q&A 전용 subagent
-model: openai/gpt-5.4
+model: openai/gpt-5.5-fast
 mode: subagent
 
 tools:

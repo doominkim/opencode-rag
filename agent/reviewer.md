@@ -1,6 +1,6 @@
 ---
 description: 버그, 회귀, 마이그레이션 리스크, 테스트 누락, 잘못된 가정, 운영 영향 edge case를 찾는 코드 리뷰 전용 subagent
-model: openai/gpt-5.5
+model: openai/gpt-5.5-fast
 mode: subagent
 
 tools:

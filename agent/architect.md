@@ -1,6 +1,6 @@
 ---
 description: 코드 위치, 모듈 경계, 의존성 방향, 책임 배치, 레이어링, 리팩토링 구조를 판단하는 아키텍처 전용 subagent
-model: openai/gpt-5.3-spark
+model: openai/gpt-5.5-fast
 mode: subagent
 
 tools:

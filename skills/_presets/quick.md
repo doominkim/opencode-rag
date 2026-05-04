@@ -1,7 +1,7 @@
 ---
 name: quick
 description: 저비용, 빠른 응답이 필요한 단순 작업용 프리셋.
-model: openai/gpt-5.4-mini
+model: openai/gpt-5.4-mini-fast
 temperature: 0.2
 ---
 

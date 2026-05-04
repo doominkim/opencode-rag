@@ -1,6 +1,6 @@
 ---
 description: 스크린샷, 디자인 캡처, Figma 컨텍스트를 검토해 구현 단서를 추출하는 멀티모달 subagent
-model: openai/gpt-5.4
+model: openai/gpt-5.5-fast
 mode: subagent
 
 tools:

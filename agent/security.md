@@ -1,6 +1,6 @@
 ---
 description: 인증/인가, 비밀 관리, 입력 검증, 권한 boundary, 의존성 취약점을 검토하는 보안 전용 subagent
-model: openai/gpt-5.4
+model: openai/gpt-5.5-fast
 mode: subagent
 
 tools:
