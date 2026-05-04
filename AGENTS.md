@@ -24,8 +24,8 @@
 ---
 
 ## Permission Source Of Truth
-- 모든 agent는 `bash`, `shell`, git 명령, 파일 삭제/이동, RAG sync/ingest/bootstrap, DB/외부 시스템 변경을 실행하기 전에 `PERMISSIONS.md`를 확인한다.
-- 권한 판단의 canonical rule table은 전역 OpenCode 설정의 `/Users/dominic/.config/opencode/plugin/auto-delegate/lib/permissions.ts`에 있는 `PERMISSION_RULES`다. `PERMISSIONS.md`는 agent와 hook이 같은 rule table을 따르도록 연결하는 안내 문서다.
+- 모든 agent는 `bash`, `shell`, git 명령, 파일 삭제/이동, RAG sync/ingest/bootstrap, DB/외부 시스템 변경을 실행하기 전에 전역 OpenCode 설정의 `/Users/dominic/.config/opencode/PERMISSIONS.md`를 확인한다. 현재 프로젝트 루트의 상대 경로 `PERMISSIONS.md`를 먼저 찾지 않는다.
+- 권한 판단의 canonical rule table은 전역 OpenCode 설정의 `/Users/dominic/.config/opencode/plugin/auto-delegate/lib/permissions.ts`에 있는 `PERMISSION_RULES`다. `/Users/dominic/.config/opencode/PERMISSIONS.md`는 agent와 hook이 같은 rule table을 따르도록 연결하는 안내 문서다.
 - 이 문서의 다른 섹션과 충돌하면 `PERMISSION_RULES`가 우선한다.
 - `requires_user_approval: true` 규칙은 정확한 명령, 영향 범위, 데이터/사용자 작업 손실 가능성을 사용자에게 먼저 제시하고 명시 승인을 받은 뒤에만 실행한다.
 - 실제 bash 권한 게이트는 `PERMISSION_RULES`에서 파생된 `/Users/dominic/.config/opencode/plugin/auto-delegate/lib/patterns.ts`와 `/Users/dominic/.config/opencode/plugin/auto-delegate/hooks/permission-gate.ts`가 담당한다. 정책을 바꿀 때는 `PERMISSION_RULES`를 먼저 수정한다.
@@ -33,7 +33,7 @@
 ---
 
 ## Git Safety
-- git 권한은 `PERMISSIONS.md`의 `git-*` rules를 따른다.
+- git 권한은 `/Users/dominic/.config/opencode/PERMISSIONS.md`의 `git-*` rules를 따른다.
 - 요약: read-only git 조회만 승인 없이 허용하고, `git mv`, `git add`, `git restore`, `git reset`, `git checkout`, `git switch`, `git worktree add/remove`, `git push`, `git pull`, `git fetch` 등 worktree/index/ref/remote를 바꿀 수 있는 명령은 명시 승인 전 금지한다.
 
 ---
@@ -152,6 +152,77 @@
 - `commit`: git 변경사항 → 커밋 메시지 생성. `commit-message` (`/commit`).
 - `rag`: RAG 검색/적재/sync/스냅샷. 기존 safety rule을 우선하고 destructive 명령은 승인 후 실행한다.
 
+---
+
+## Review Quality Gate
+
+리뷰 품질은 단일 pass보다 독립 검토, 비판 pass, confidence filtering으로 보장한다.
+
+- Findings first를 유지하되, weak signal을 억제한다.
+- 각 finding은 실제 코드 근거, failure mode, 사용자/운영 영향, confidence를 가져야 한다.
+- confidence 80 미만인 항목은 최종 finding에서 제외하고 필요한 경우 Open questions 또는 Residual risks로 낮춘다.
+- linter/typechecker/compiler가 확실히 잡을 단순 오류는 CI 영역으로 보고, 리뷰 finding은 런타임/동작/운영 리스크에 집중한다.
+- pre-existing issue 또는 변경 라인과 직접 관련 없는 문제는 finding으로 올리지 않는다.
+
+## 병렬 vs 순차
+
+- 병렬 OK: 서로 다른 도메인/영역 조사, 코드 검색 + 문서 조회, monorepo 영역별 리뷰, 독립적인 skeptical review
+- 순차 강제: plan → 구현 → 검증 → 리뷰 → 커밋
+- 병렬 호출은 한 메시지에 다중 Task 콜로 묶어 발신한다. 의존성이 있으면 결과를 받고 다음 호출한다.
+
+### 병렬 리뷰 수 가이드
+
+| 변경 규모 | 권장 리뷰 방식 |
+|---|---|
+| 단일 파일 / 작은 변경 | primary 직접 검토 또는 reviewer 1개 |
+| 작은 multi-file 변경 | reviewer 1~2개 |
+| 중간 cross-file 변경 | reviewer 2~3개 |
+| 큰 / cross-domain / high-risk 변경 | reviewer 4~6개 + critic pass |
+| 6 초과 | 오버헤드가 크므로 영역을 재분할하거나 핵심 리스크만 지정 |
+
+### Critic Pass
+
+일반 리뷰가 합격이어도 다음 조건이면 비판 전용 호출을 한 번 더 추가한다:
+
+- 운영 영향이 큰 변경: migration, 결제, 인증/인가, 외부 API 계약, 배포/환경 설정
+- cross-domain 변경
+- reviewer가 "확인된 finding 없음"으로 마쳤지만 변경 규모가 큰 경우
+
+호출 방식: `reviewer` 또는 `general-purpose`에 비판 전용 프롬프트로 별도 호출한다.
+
+프롬프트에 반드시 포함한다:
+
+- "리뷰가 합격했다고 가정하지 말고 처음부터 의심한다"
+- "edge case, 회귀 시나리오, 가정의 깨짐을 우선 찾는다"
+- "스타일/취향 의견은 제외, 운영 영향만 본다"
+- "confidence 80 미만은 finding으로 보고하지 않는다"
+
+### Finding Confidence Scoring
+
+- 0-25: false positive 가능성이 높거나 pre-existing issue
+- 26-50: 실제 문제일 수 있으나 검증 부족 또는 영향 낮음
+- 51-75: 타당하지만 nitpick/희귀 edge case 가능성 큼
+- 76-90: 실제로 발생할 가능성이 높고 수정 가치가 큼
+- 91-100: 코드 근거로 확정 가능한 critical/important bug
+
+최종 응답에는 80 이상 finding만 남긴다. 76-79는 Open questions 또는 Residual risks로만 남긴다.
+
+### 검증 실패 재시도
+
+큰 변경에서 검증이 실패하면 자동 재시도 패턴을 사용할 수 있다:
+
+- 상한 명시: 최대 3회까지 재구현 → 검증 반복. 무한 루프 금지.
+- 실패 원인 기록: 매 시도마다 compile error, 실패 test 이름, runtime trace를 명시한다.
+- 중단 조건: 3회 모두 실패하면 사용자에게 보고하고 중단한다. 자동 우회/스킵 금지.
+- destructive 명령, migration 재실행, sync/ingest/bootstrap은 재시도 대상에서 제외한다.
+
+### Self-approval 금지
+
+- 구현을 위임한 agent에게 같은 변경의 최종 리뷰/검증을 다시 위임하지 않는다.
+- authoring lane(`metis`, `api`, `backend`, `frontend` 등)과 review lane(`reviewer`, `verifier`)을 분리한다.
+- 한 Task 호출에 "구현 + 리뷰"를 함께 맡기지 않는다.
+- subagent self-report는 근거가 아니라 후보 신호로만 보고, primary agent가 실제 diff/파일/명령 결과로 검증한다.
+
 ## Question Policy
 - 질문은 결과가 달라질 때만 한다.
 
@@ -182,12 +253,12 @@
 ---
 
 ## Forbidden Actions
-- 금지/승인 필요 작업은 `PERMISSIONS.md`를 따른다.
+- 금지/승인 필요 작업은 `/Users/dominic/.config/opencode/PERMISSIONS.md`를 따른다.
 - 요약: 사용자 승인 없이 commit, push, deploy, destructive sync/bootstrap/migration, 대량 파일 생성/삭제/이동, git mutate 명령을 실행하지 않는다.
 - `.env`, secret, token, private key는 승인 여부와 무관하게 출력하지 않는다.
 - verifier를 포함한 모든 검증 작업은 비파괴 명령만 실행한다.
 
-> destructive bash 명령은 `plugin/auto-delegate`의 `permission.ask` hook이 강제로 사용자 승인 게이트를 건다 (`hooks/permission-gate.ts`). 정책 원본은 `PERMISSIONS.md`, 실행 패턴은 `lib/patterns.ts` 참고.
+> destructive bash 명령은 `plugin/auto-delegate`의 `permission.ask` hook이 강제로 사용자 승인 게이트를 건다 (`hooks/permission-gate.ts`). 정책 원본은 `/Users/dominic/.config/opencode/PERMISSIONS.md`, 실행 패턴은 `lib/patterns.ts` 참고.
 
 ---
 
